@@ -1,0 +1,641 @@
+---
+title: "An introduction to reproducible computational research"
+# subtitle: "⚔<br/>with xaringan"
+author: "Kieran Campbell"
+institute: "Lunenfeld Tanenbaum Research Institute & University of Toronto"
+date: "2021-01-12 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, tamu-fonts]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+# What we'll cover
+
+- Why work in a reproducible manner
+
+- Random number generators and seeds
+
+- Introduction to Snakemake
+
+
+---
+
+class: inverse, center, middle
+
+# Why work reproducibly?
+
+---
+
+# What do we mean by reproducible research?
+
+--
+
+Given a fixed set of input data (e.g. gene expression data) we would like to re-create the output data (e.g. plots, figures, slides) **exactly**.
+
+--
+
+## Sounds obvious?
+
+--
+To achieve this, we need:
+
+1. All the code _and instructions for executing the code_ to produce the output<sup>1</sup>
+.footnote[
+[1] Together we'll call the code and instructions for executing it the **workflow**
+]
+
+--
+
+2. To guard against sources of randomness in our workflow (by setting _random seeds_)
+
+--
+
+3. To keep track of the software versions our workflow uses
+
+---
+
+# 3 reasons to work reproducibly
+
+## 1. Because you should
+
+.pull-left[
+`r icon::fontawesome("flask")`
+Input data <br/>
+_<span style="color: darkred;">(Highly variable)</span>_
+
+.center[`r icon::fontawesome("arrow-down")`]
+
+`r icon::fontawesome("code")`
+Creation of computational workflow  <br/>
+_<span style="color: darkred;">(Highly subjective)</span>_
+
+.center[`r icon::fontawesome("arrow-down")`]
+
+`r icon::fontawesome("play")`
+Execution of computational workflow <br/>
+_<span style="color: darkgreen;">(Possible to reproduce!)</span>_
+
+.center[`r icon::fontawesome("arrow-down")`]
+
+`r icon::fontawesome("user-ninja")`
+Interpretation of results <br/>
+_<span style="color: darkred;">(Highly subjective)</span>_
+
+]
+
+.pull-right[
+
+It's _really hard_ to make science reproducible
+
+The _least_ we can do is make the computational workflow execution reproducible
+
+
+]
+
+---
+
+
+# 3 reasons to work reproducibly
+
+## 2. It's good for your health
+
+
+Imagine the first paper of your PhD got accepted, but 2 months after acceptance the journal asks for a higher-res version of figure 2
+
+**Non reproducible**: blind panic because you can't reproduce the figure<sup>1</sup>
+
+**Reproducible**: easily rerun your computational workflow (specifying higher resolution), head to bar to celebrate paper acceptance
+
+.footnote[
+[1] Definitely not based on a true story
+]
+
+
+---
+
+
+# 3 reasons to work reproducibly
+
+## 3. It makes your work look even more impressive
+
+Once you've made a workflow to run with _one_ parameter set, it's easy to extend to many.
+
+
+E.g. in **Snakemake**
+```python
+cohorts = ['Smith','Lin','Schapiro'] # Datasets
+num_clusters = range(2,30) # Number of clusters
+cluster_method = ['k_means','GMM'] # Clustering method
+
+output_files = expand("output/cluster_results_{c}_{n}_{m}.tsv",
+  c=cohorts,
+  n=num_clusters,
+  m=cluster_method)
+```
+Snakemake will build the 3 x 29 x 2 = 174
+output files that would make for a _really impressive benchmarking_
+
+---
+
+class: inverse, center, middle
+
+# Random seeds
+
+---
+
+# Pseudorandom number generation
+
+Very often workflows rely on some element of _randomness_, e.g.
+
+1. Simulation-based modelling
+2. Statistical inference (Markov-Chain Monte Carlo)
+3. Subsampling
+
+--
+
+Computers use some fancy mathematics to generate pseudorandom numbers, e.g. in R:
+
+```{r}
+runif(5)
+```
+
+We want our numbers to be **random** but also **reproducible**<sup>1</sup>
+
+.footnote[
+[1] Robustness to a random seed can be desirable
+]
+
+---
+
+# Random seeds
+
+The **random seed** is the number from which all subsequent pseudorandom numbers are initialized
+
+Same random seed `r icon::fontawesome("arrow-alt-circle-right")` same _sequence_ of random numbers
+
+--
+
+.pull-left[
+### No seed
+```{r}
+print(runif(3))
+print(runif(3))
+```
+]
+
+--
+
+.pull-right[
+### Seed
+```{r}
+{{set.seed(456345)}}
+print(runif(3))
+{{set.seed(456345)}}
+print(runif(3))
+```
+]
+
+---
+
+# Random seeds
+
+* Any time workflow involves randomness: **set the seed**
+
+* Sometimes randomness is desirable across multiple runs (e.g. subsample benchmarking) `r icon::fontawesome("arrow-alt-circle-right")` set the sequence of seeds
+
+--
+
+### R
+```r
+set.seed(123)
+```
+
+### Python <sup>1</sup>
+
+.pull-left[
+  Numpy:
+  ```python
+  import numpy as np
+  np.random.seed(123)
+  ```
+]
+.pull-right[
+  Pytorch:
+  ```python
+  import torch
+  torch.manual_seed(123)
+  ```
+]
+
+
+.footnote[
+[1] Your mileage may vary
+]
+
+
+
+---
+
+class: inverse, center, middle
+
+# Introduction to Snakemake
+
+---
+
+# Snakemake
+
+Snakemake is a workflow system based on Python
+
+You provide a list of output files you want created and rules for creating them in a **_Snakefile_**
+
+Run `snakemake` from the command line and the rules get executed
+
+---
+
+# Snakemake: example # 1
+
+First example: list files in the directory `fastqs` and save them to `fastq_list.txt`
+
+.pull-left[
+```python
+rule list_files:
+  output:
+    "fastq_list.txt"
+  shell:
+    "ls fastqs/ > {output}"
+```
+
+How does Snakemake know we want to make `fastq_list.txt`?
+
+Special rule **all**<sup>1</sup>:
+```python
+rule all:
+  input:
+    "fastq_list.txt"
+```
+]
+
+.footnote[
+[1] The **input** to all is the **output** of the entire workflow
+]
+
+--
+
+.pull-right[
+Store this in a file called `Snakefile`
+
+Navigate to directory containing `Snakefile` and run
+
+```bash
+snakemake
+```
+
+and snakemake will run
+
+```bash
+ls fastqs/ > fastq_list.txt
+```
+
+
+]
+
+---
+
+# Snakemake example 2: read alignment
+
+Say we have 3 patients (Anne, Ben, Clara) with whole genome sequencing data we want to align with `bwa mem`
+
+Assume we have fastq file for each patient, e.g. `Anne.fq`
+
+You read the `bwa mem` manual and see to align a single fastq you would run <br> `bwa mem ref.fa reads.fq > aln-se.sam`
+
+--
+
+### Step 1: define output files
+
+```python
+patients = ['Anne', 'Ben', 'Clara']
+output_files = expand("{p}.sam", p=patients)
+```
+
+* `output_files` is now a python list: <br>
+`['Anne.sam','Ben.sam','Clara.sam']`
+* `p` is a _wildcard_, a special string that will get substituted
+* Curly braces `{...}` tell Snakemake a wildcard
+
+---
+
+# Snakemake example 2: read alignment
+
+### Step 2: tell Snakemake you want to make those
+
+```python
+rule all:
+  input:
+    output_files
+```
+
+---
+
+
+# Snakemake example 2: read alignment
+
+### Step 3: tell Snakemake how to build `*.sam`
+
+* We tell Snakemake how to build a file with the pattern `{p}.sam`
+* Remember:
+ * Input is e.g. `Anne.fq`
+ * `bwa mem` is invoked via `bwa mem ref.fa reads.fq > aln-se.sam`
+
+
+```python
+rule align:
+  input:
+    ref="ref.fa",
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} > {output}"
+    
+```
+
+---
+
+# Snakemake example 2: read alignment
+
+```python
+rule align:
+  input:
+    ref="ref.fa",
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} > {output}"
+    
+```
+
+Snakemake inner monologue: 
+
+--
+
+* "I want to build `Anne.sam` "
+
+--
+* "Hey if I substitute `{p}` with `Anne` I can do that"
+
+--
+ * Then `{p}.fq` `r icon::fontawesome("arrow-right")` `Anne.fq`, `{p}.sam` `r icon::fontawesome("arrow-right")` `Anne.sam`
+ * Command line call:  `bwa mem ref.fa Anne.fq > Anne.sam`
+
+--
+* "I can repeat this for all the other patients"
+
+--
+
+Snakemake will be angry with you if `Anne.fq` does not exist 
+
+---
+
+# The output of rules can be the input of others
+
+Say `Anne.fq` doesn't exist but needs created via Illumina's `bcl2fastq`<sup>1</sup>:
+
+
+.footnote[
+[1] This isn't actually how `bcl2fastq` runs
+]
+
+```python
+rule make_fastq:
+  input:
+    "{p}.bcl"
+  output:
+    "{p}.fq"
+  shell:
+    "bcl2fastq {input} {output}"
+```
+
+--
+
+New Snakemake internal monologue:
+
+--
+* "I want to build `Anne.sam`, for which I need `Anne.fq`"
+
+--
+* "But `Anne.fq` doesn't exist - can I create it?"
+
+--
+* "Oh hey if I run the `make_fastq` rule substituting `p` with `Anne` I can!
+
+---
+
+# Inputting metadata to Snakemake
+
+Before we hard-coded the sample names: <br>
+`patients = ['Anne', 'Ben', 'Clara']`
+
+Not a good idea (many samples, change samples)
+
+Solution: using python in the Snakefile:
+
+```python
+import pandas as pd
+
+metadata = pd.read_csv("study-metadata.csv")
+patients = list(metadata.patient)
+```
+
+---
+
+# Using config files
+
+Everything hard-coded `r icon::fontawesome("arrow-right")` yaml config file:
+
+```yaml
+metadata: study-metadata.csv
+alignment_ref: ref.fa
+```
+--
+
+New Snakefile:
+
+```python
+configfile: "config.yml"
+...
+metadata = pd.read_csv(config['metadata'])
+...
+rule align:
+  input:
+    ref=config['alignment_ref'],
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} > {output}"
+
+```
+
+---
+
+# Snakemake cluster support
+
+Snakemake can automatically send jobs to cluster compute nodes for you (rather than manual `sbatch`)
+
+--
+
+At Lunenfeld, slurm compute engine:
+
+```bash
+snakemake --profile slurm --jobs 50
+```
+
+will execute<sup>1</sup> 50 jobs in parallel, sending each to a compute node 
+
+.footnote[
+[1] Takes a little installation, see https://github.com/Snakemake-Profiles/slurm
+]
+
+--
+
+Back to example aligning `Anne.fq`, `Ben.fq`, `Clara.fq`:
+
+* Snakemake needs to call `rule align` 3 times
+* Now works out the `shell` for each and submits independently
+* All 3 (can be) executed in parallel
+
+---
+
+# Misc Snakemake observations
+
+1. Snakemake checks timestamps: if you update `Anne.fq`, Snakemake will rebuild `Anne.sam`: **exceptionally useful**
+
+--
+
+2. Snakemake can do a _dry run_ via `snakemake -n` - lets you know what it's planning on doing before doing it
+
+--
+
+3. Think about your directory structure. At minimum, want
+ * `raw-data/` `r icon::fontawesome("arrow-right")` where raw data is stored, **never modified**
+ * `pipeline/` `r icon::fontawesome("arrow-right")` where all scripts are kept
+ * `results/` `r icon::fontawesome("arrow-right")` where computational results and generated figures go
+
+--
+
+> Q: Is my project reproducible?
+
+--
+
+Delete your `results/` directory and call snakemake: can you rebuild your entire project?
+
+--
+
+**So much more to explore**: https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html
+
+---
+
+# Original goals of reproducibility
+
+1. All the code _and instructions for executing the code_ to produce the output
+
+ `r icon::fontawesome("check-circle")` Use Snakemake
+
+--
+
+2. To guard against sources of randomness in our workflow 
+
+ `r icon::fontawesome("check-circle")` Use random seeds
+
+--
+
+3. To keep track of the software versions our workflow uses
+
+ `r icon::fontawesome("question-circle")` `r icon::fontawesome("question-circle")`
+ `r icon::fontawesome("question-circle")`
+
+---
+
+# Language-specific solutions
+
+--
+
+.pull-left[
+## Python: conda environments
+
+* Save a copy of all Conda compatible packages 
+
+* Includes package versions
+
+* Export to `yaml` file to share
+
+]
+
+--
+
+.pull-right[
+
+## R: `renv` package<sup>1</sup>
+
+.footnote[
+[1] https://rstudio.github.io/renv/articles/renv.html
+]
+
+* Successor to `packrat` package
+
+* Saves project-specific `R` libraries (with package versions)
+
+* Only solves the `R` package reproduciblity part
+
+]
+
+---
+
+# The nuclear option: Docker containers
+
+Can think of a docker container as a _computer within a computer_
+
+Contains _code_, _system tools_, _system libraries_, _config_
+
+--
+
+Effectively decouples the software from the hardware `r icon::fontawesome("arrow-right")` software now reproducible regardless of executing system 
+
+--
+
+Create a plain text `Dockerfile` that describes what you want on your "computer":
+```bash
+# Install samtools
+RUN apt-get install -y samtools
+
+# Install ggplot2
+RUN Rscript -e "install.packages('ggplot2')"
+```
+
+--
+ 
+Snakemake has built in Singularity<sup>1</sup> support: `
+snakemake --use-singularity`
+
+.footnote[
+[1] Singularity open source software that can run Docker containers
+]
+
+---
+
+# Questions
+
+Email: `kierancampbell@lunenfeld.ca`
+
+Lab website: https://www.camlab.ca
+
+---
+
+
