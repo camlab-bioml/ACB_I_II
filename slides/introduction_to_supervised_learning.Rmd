@@ -267,9 +267,164 @@ $$t_n = f_\theta(x_n)$$
 
 We aim to adjust $\theta$ to make $t_n$ as _close_ to $y_n$ averaged over $n$
 
+--
+
 Define some _distance_ between $t_n$ and $y_n$ and minimize wrt $\theta$
+
+--
+
+Common choice: mean squared error
+
+$$\mathrm{MSE(\mathbf{t}, \mathbf{y})} = \frac{1}{N} \sum_{n=1}^N (y_n-t_n)^2$$
+
+--
+
+
+Remember this is still a function of $\theta$:
+
+$$\mathrm{MSE(\mathbf{t}, \mathbf{y})} = \frac{1}{N} \sum_{n=1}^N (y_n-f_\theta(x_n))^2$$
+
 
 ---
 
+# Linear regression
+
+So what is linear regression? 
+
+--
+
+$$t_n = f_\theta(x_n) = wx_n + b$$
+--
+
+* Parameters $\theta = \{w,b\}$
+
+--
+
+* $w$ known as the _weight_, $b$ the bias
+--
+
+* Loss now becomes
+
+$$\mathrm{MSE(\mathbf{t}, \mathbf{y})} = \frac{1}{N} \sum_{n=1}^N (y_n-wx_n - b)^2$$
+
+--
+
+Iteratively adjust $w$ and $b$ to minimize $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$
+
+---
+
+# Minimizing losses
+
+So how do we minimize $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$? Strategies:
+
+--
+
+1. Randomly guess<sup>1</sup> $(w,b)$ and choose the values that result in lowest $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$
+.footnote[
+[1] Not recommended
+]
+
+--
+
+2. Differentiate $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$ w.r.t $(w,b)$, set to 0, solve for $(w,b)$
+
+--
+
+3. `r icon::fontawesome("star")` Numerical methods `r icon::fontawesome("star")`
+ * Giant scientific field
+ * Introduce _gradient descent_ here `r icon::fontawesome("arrow-right")` good in high dimensional problems where gradients of the loss w.r.t. the parameters are available
+
+---
+
+background-image: url('intro-ml_figs/mountain.jpg')
+background-position: center
+background-size: contain
+class: inverse
+
+
+# Gradient descent
+
+
+You're at the top of a mountain, it's getting dark, and you need to get down
+--
+ 
+* Your position $(x,y)$ is your parameter space $(w,b)$ to explore
+
+--
+ 
+* Your height is $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$ you want to minimize
+
+--
+
+## Q: What's the strategy?
+
+--
+
+Take successive little steps downhill until things flatten out
+
+--
+
+## Local optimality
+
+Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
+
+ `r icon::fontawesome("arrow-right")` Big problem depending on shape of your mountain / loss function
+
+---
+
+# What is downhill?
+
+> successive little steps downhill
+
+--
+
+.pull-left[
+Consider $y=(x-1)^2$, $\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)$
+]
+
+.pull-right[
+```{r, echo=FALSE, fig.align='center', fig.width=4,fig.height=4}
+ggplot() + xlim(-3, 5) + 
+  geom_function(fun = function(x) (x-1)^2) + 
+  geom_vline(xintercept = 1, color='grey50', linetype=2) +
+  labs(x="x", y="y")
+```
+]
+
+--
+
+Notice:
+* When $x > 1$ we want to go to the _left_ and $\frac{\mathrm{d}y}{\mathrm{d}x} > 0$
+* When $x < 1$ we want to go to the _right_ and  $\frac{\mathrm{d}y}{\mathrm{d}x} < 0$
+
+The sign of the gradient always points uphill!
+
+---
+
+# Gradient descent
+
+This suggests an iterative scheme:
+
+1. Initialize some values for $(w,b)$
+
+--
+
+2. For a given number of steps:
+ * Update $w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
+ * Update $b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
+
+--
+
+3. Monitor $MSE(\mathbf{t}, \mathbf{y}; w, b)$ - if it "levels off" we can end with the optimal values $(w,b)$
+
+--
+
+## Learning rate
+
+$\epsilon>0$ is known as the _learning rate_ or _step size_. 
+
+* Important parameter to tune: too large and you overshoot, too small and it's inefficient
+
+---
 
 ---
