@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>An introduction to reproducible computational research</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Kieran Campbell" />
+    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# An introduction to reproducible computational research
+### Kieran Campbell
+### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
+### 2021-01-12 (updated: 2021-03-16)
+
+---
+
+
+# What we'll cover
+
+- Why work in a reproducible manner
+
+- Random number generators and seeds
+
+- Introduction to Snakemake
+
+
+---
+
+class: inverse, center, middle
+
+# Why work reproducibly?
+
+---
+
+# What do we mean by reproducible research?
+
+--
+
+Given a fixed set of input data (e.g. gene expression data) we would like to re-create the output data (e.g. plots, figures, slides) **exactly**.
+
+--
+
+## Sounds obvious?
+
+--
+To achieve this, we need:
+
+1. All the code _and instructions for executing the code_ to produce the output&lt;sup&gt;1&lt;/sup&gt;
+.footnote[
+[1] Together we'll call the code and instructions for executing it the **workflow**
+]
+
+--
+
+2. To guard against sources of randomness in our workflow (by setting _random seeds_)
+
+--
+
+3. To keep track of the software versions our workflow uses
+
+---
+
+# 3 reasons to work reproducibly
+
+## 1. Because you should
+
+.pull-left[
+&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M437.2 403.5L320 215V64h8c13.3 0 24-10.7 24-24V24c0-13.3-10.7-24-24-24H120c-13.3 0-24 10.7-24 24v16c0 13.3 10.7 24 24 24h8v151L10.8 403.5C-18.5 450.6 15.3 512 70.9 512h306.2c55.7 0 89.4-61.5 60.1-108.5zM137.9 320l48.2-77.6c3.7-5.2 5.8-11.6 5.8-18.4V64h64v160c0 6.9 2.2 13.2 5.8 18.4l48.2 77.6h-172z"&gt;&lt;/path&gt;&lt;/svg&gt;
+Input data &lt;br/&gt;
+_&lt;span style="color: darkred;"&gt;(Highly variable)&lt;/span&gt;_
+
+.center[&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M413.1 222.5l22.2 22.2c9.4 9.4 9.4 24.6 0 33.9L241 473c-9.4 9.4-24.6 9.4-33.9 0L12.7 278.6c-9.4-9.4-9.4-24.6 0-33.9l22.2-22.2c9.5-9.5 25-9.3 34.3.4L184 343.4V56c0-13.3 10.7-24 24-24h32c13.3 0 24 10.7 24 24v287.4l114.8-120.5c9.3-9.8 24.8-10 34.3-.4z"&gt;&lt;/path&gt;&lt;/svg&gt;]
+
+&lt;svg viewBox="0 0 640 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M278.9 511.5l-61-17.7c-6.4-1.8-10-8.5-8.2-14.9L346.2 8.7c1.8-6.4 8.5-10 14.9-8.2l61 17.7c6.4 1.8 10 8.5 8.2 14.9L293.8 503.3c-1.9 6.4-8.5 10.1-14.9 8.2zm-114-112.2l43.5-46.4c4.6-4.9 4.3-12.7-.8-17.2L117 256l90.6-79.7c5.1-4.5 5.5-12.3.8-17.2l-43.5-46.4c-4.5-4.8-12.1-5.1-17-.5L3.8 247.2c-5.1 4.7-5.1 12.8 0 17.5l144.1 135.1c4.9 4.6 12.5 4.4 17-.5zm327.2.6l144.1-135.1c5.1-4.7 5.1-12.8 0-17.5L492.1 112.1c-4.8-4.5-12.4-4.3-17 .5L431.6 159c-4.6 4.9-4.3 12.7.8 17.2L523 256l-90.6 79.7c-5.1 4.5-5.5 12.3-.8 17.2l43.5 46.4c4.5 4.9 12.1 5.1 17 .6z"&gt;&lt;/path&gt;&lt;/svg&gt;
+Creation of computational workflow  &lt;br/&gt;
+_&lt;span style="color: darkred;"&gt;(Highly subjective)&lt;/span&gt;_
+
+.center[&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M413.1 222.5l22.2 22.2c9.4 9.4 9.4 24.6 0 33.9L241 473c-9.4 9.4-24.6 9.4-33.9 0L12.7 278.6c-9.4-9.4-9.4-24.6 0-33.9l22.2-22.2c9.5-9.5 25-9.3 34.3.4L184 343.4V56c0-13.3 10.7-24 24-24h32c13.3 0 24 10.7 24 24v287.4l114.8-120.5c9.3-9.8 24.8-10 34.3-.4z"&gt;&lt;/path&gt;&lt;/svg&gt;]
+
+&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"&gt;&lt;/path&gt;&lt;/svg&gt;
+Execution of computational workflow &lt;br/&gt;
+_&lt;span style="color: darkgreen;"&gt;(Possible to reproduce!)&lt;/span&gt;_
+
+.center[&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M413.1 222.5l22.2 22.2c9.4 9.4 9.4 24.6 0 33.9L241 473c-9.4 9.4-24.6 9.4-33.9 0L12.7 278.6c-9.4-9.4-9.4-24.6 0-33.9l22.2-22.2c9.5-9.5 25-9.3 34.3.4L184 343.4V56c0-13.3 10.7-24 24-24h32c13.3 0 24 10.7 24 24v287.4l114.8-120.5c9.3-9.8 24.8-10 34.3-.4z"&gt;&lt;/path&gt;&lt;/svg&gt;]
+
+&lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M325.4 289.2L224 390.6 122.6 289.2C54 295.3 0 352.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-70.2-54-127.1-122.6-133.2zM32 192c27.3 0 51.8-11.5 69.2-29.7 15.1 53.9 64 93.7 122.8 93.7 70.7 0 128-57.3 128-128S294.7 0 224 0c-50.4 0-93.6 29.4-114.5 71.8C92.1 47.8 64 32 32 32c0 33.4 17.1 62.8 43.1 80-26 17.2-43.1 46.6-43.1 80zm144-96h96c17.7 0 32 14.3 32 32H144c0-17.7 14.3-32 32-32z"&gt;&lt;/path&gt;&lt;/svg&gt;
+Interpretation of results &lt;br/&gt;
+_&lt;span style="color: darkred;"&gt;(Highly subjective)&lt;/span&gt;_
+
+]
+
+.pull-right[
+
+It's _really hard_ to make science reproducible
+
+The _least_ we can do is make the computational workflow execution reproducible
+
+
+]
+
+---
+
+
+# 3 reasons to work reproducibly
+
+## 2. It's good for your health
+
+
+Imagine the first paper of your PhD got accepted, but 2 months after acceptance the journal asks for a higher-res version of figure 2
+
+**Non reproducible**: blind panic because you can't reproduce the figure&lt;sup&gt;1&lt;/sup&gt;
+
+**Reproducible**: easily rerun your computational workflow (specifying higher resolution), head to bar to celebrate paper acceptance
+
+.footnote[
+[1] Definitely not based on a true story
+]
+
+
+---
+
+
+# 3 reasons to work reproducibly
+
+## 3. It makes your work look even more impressive
+
+Once you've made a workflow to run with _one_ parameter set, it's easy to extend to many.
+
+
+E.g. in **Snakemake**
+```python
+cohorts = ['Smith','Lin','Schapiro'] # Datasets
+num_clusters = range(2,30) # Number of clusters
+cluster_method = ['k_means','GMM'] # Clustering method
+
+output_files = expand("output/cluster_results_{c}_{n}_{m}.tsv",
+  c=cohorts,
+  n=num_clusters,
+  m=cluster_method)
+```
+Snakemake will build the 3 x 29 x 2 = 174
+output files that would make for a _really impressive benchmarking_
+
+---
+
+class: inverse, center, middle
+
+# Random seeds
+
+---
+
+# Pseudorandom number generation
+
+Very often workflows rely on some element of _randomness_, e.g.
+
+1. Simulation-based modelling
+2. Statistical inference (Markov-Chain Monte Carlo)
+3. Subsampling
+
+--
+
+Computers use some fancy mathematics to generate pseudorandom numbers, e.g. in R:
+
+
+```r
+runif(5)
+```
+
+```
+## [1] 0.18699336 0.03107596 0.68288591 0.95191400 0.54740634
+```
+
+We want our numbers to be **random** but also **reproducible**&lt;sup&gt;1&lt;/sup&gt;
+
+.footnote[
+[1] Robustness to a random seed can be desirable
+]
+
+---
+
+# Random seeds
+
+The **random seed** is the number from which all subsequent pseudorandom numbers are initialized
+
+Same random seed &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M504 256C504 119 393 8 256 8S8 119 8 256s111 248 248 248 248-111 248-248zm-448 0c0-110.5 89.5-200 200-200s200 89.5 200 200-89.5 200-200 200S56 366.5 56 256zm72 20v-40c0-6.6 5.4-12 12-12h116v-67c0-10.7 12.9-16 20.5-8.5l99 99c4.7 4.7 4.7 12.3 0 17l-99 99c-7.6 7.6-20.5 2.2-20.5-8.5v-67H140c-6.6 0-12-5.4-12-12z"&gt;&lt;/path&gt;&lt;/svg&gt; same _sequence_ of random numbers
+
+--
+
+.pull-left[
+### No seed
+
+```r
+print(runif(3))
+```
+
+```
+## [1] 0.5813489 0.3335551 0.0501736
+```
+
+```r
+print(runif(3))
+```
+
+```
+## [1] 0.5702570 0.6479943 0.9203570
+```
+]
+
+--
+
+.pull-right[
+### Seed
+
+```r
+*set.seed(456345)
+print(runif(3))
+```
+
+```
+## [1] 0.2535377 0.3820019 0.1141158
+```
+
+```r
+*set.seed(456345)
+print(runif(3))
+```
+
+```
+## [1] 0.2535377 0.3820019 0.1141158
+```
+]
+
+---
+
+# Random seeds
+
+* Any time workflow involves randomness: **set the seed**
+
+* Sometimes randomness is desirable across multiple runs (e.g. subsample benchmarking) &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M504 256C504 119 393 8 256 8S8 119 8 256s111 248 248 248 248-111 248-248zm-448 0c0-110.5 89.5-200 200-200s200 89.5 200 200-89.5 200-200 200S56 366.5 56 256zm72 20v-40c0-6.6 5.4-12 12-12h116v-67c0-10.7 12.9-16 20.5-8.5l99 99c4.7 4.7 4.7 12.3 0 17l-99 99c-7.6 7.6-20.5 2.2-20.5-8.5v-67H140c-6.6 0-12-5.4-12-12z"&gt;&lt;/path&gt;&lt;/svg&gt; set the sequence of seeds
+
+--
+
+### R
+```r
+set.seed(123)
+```
+
+### Python &lt;sup&gt;1&lt;/sup&gt;
+
+.pull-left[
+  Numpy:
+  ```python
+  import numpy as np
+  np.random.seed(123)
+  ```
+]
+.pull-right[
+  Pytorch:
+  ```python
+  import torch
+  torch.manual_seed(123)
+  ```
+]
+
+
+.footnote[
+[1] Your mileage may vary
+]
+
+
+
+---
+
+class: inverse, center, middle
+
+# Introduction to Snakemake
+
+---
+
+# Snakemake
+
+Snakemake is a workflow system based on Python
+
+You provide a list of output files you want created and rules for creating them in a **_Snakefile_**
+
+Run `snakemake` from the command line and the rules get executed
+
+---
+
+# Snakemake: example # 1
+
+First example: list files in the directory `fastqs` and save them to `fastq_list.txt`
+
+.pull-left[
+```python
+rule list_files:
+  output:
+    "fastq_list.txt"
+  shell:
+    "ls fastqs/ &gt; {output}"
+```
+
+How does Snakemake know we want to make `fastq_list.txt`?
+
+Special rule **all**&lt;sup&gt;1&lt;/sup&gt;:
+```python
+rule all:
+  input:
+    "fastq_list.txt"
+```
+]
+
+.footnote[
+[1] The **input** to all is the **output** of the entire workflow
+]
+
+--
+
+.pull-right[
+Store this in a file called `Snakefile`
+
+Navigate to directory containing `Snakefile` and run
+
+```bash
+snakemake
+```
+
+and snakemake will run
+
+```bash
+ls fastqs/ &gt; fastq_list.txt
+```
+
+
+]
+
+---
+
+# Snakemake example 2: read alignment
+
+Say we have 3 patients (Anne, Ben, Clara) with whole genome sequencing data we want to align with `bwa mem`
+
+Assume we have fastq file for each patient, e.g. `Anne.fq`
+
+You read the `bwa mem` manual and see to align a single fastq you would run &lt;br&gt; `bwa mem ref.fa reads.fq &gt; aln-se.sam`
+
+--
+
+### Step 1: define output files
+
+```python
+patients = ['Anne', 'Ben', 'Clara']
+output_files = expand("{p}.sam", p=patients)
+```
+
+* `output_files` is now a python list: &lt;br&gt;
+`['Anne.sam','Ben.sam','Clara.sam']`
+* `p` is a _wildcard_, a special string that will get substituted
+* Curly braces `{...}` tell Snakemake a wildcard
+
+---
+
+# Snakemake example 2: read alignment
+
+### Step 2: tell Snakemake you want to make those
+
+```python
+rule all:
+  input:
+    output_files
+```
+
+---
+
+
+# Snakemake example 2: read alignment
+
+### Step 3: tell Snakemake how to build `*.sam`
+
+* We tell Snakemake how to build a file with the pattern `{p}.sam`
+* Remember:
+ * Input is e.g. `Anne.fq`
+ * `bwa mem` is invoked via `bwa mem ref.fa reads.fq &gt; aln-se.sam`
+
+
+```python
+rule align:
+  input:
+    ref="ref.fa",
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} &gt; {output}"
+    
+```
+
+---
+
+# Snakemake example 2: read alignment
+
+```python
+rule align:
+  input:
+    ref="ref.fa",
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} &gt; {output}"
+    
+```
+
+Snakemake inner monologue: 
+
+--
+
+* "I want to build `Anne.sam` "
+
+--
+* "Hey if I substitute `{p}` with `Anne` I can do that"
+
+--
+ * Then `{p}.fq` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; `Anne.fq`, `{p}.sam` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; `Anne.sam`
+ * Command line call:  `bwa mem ref.fa Anne.fq &gt; Anne.sam`
+
+--
+* "I can repeat this for all the other patients"
+
+--
+
+Snakemake will be angry with you if `Anne.fq` does not exist 
+
+---
+
+# The output of rules can be the input of others
+
+Say `Anne.fq` doesn't exist but needs created via Illumina's `bcl2fastq`&lt;sup&gt;1&lt;/sup&gt;:
+
+
+.footnote[
+[1] This isn't actually how `bcl2fastq` runs
+]
+
+```python
+rule make_fastq:
+  input:
+    "{p}.bcl"
+  output:
+    "{p}.fq"
+  shell:
+    "bcl2fastq {input} {output}"
+```
+
+--
+
+New Snakemake internal monologue:
+
+--
+* "I want to build `Anne.sam`, for which I need `Anne.fq`"
+
+--
+* "But `Anne.fq` doesn't exist - can I create it?"
+
+--
+* "Oh hey if I run the `make_fastq` rule substituting `p` with `Anne` I can!
+
+---
+
+# Inputting metadata to Snakemake
+
+Before we hard-coded the sample names: &lt;br&gt;
+`patients = ['Anne', 'Ben', 'Clara']`
+
+Not a good idea (many samples, change samples)
+
+Solution: using python in the Snakefile:
+
+```python
+import pandas as pd
+
+metadata = pd.read_csv("study-metadata.csv")
+patients = list(metadata.patient)
+```
+
+---
+
+# Using config files
+
+Everything hard-coded &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; yaml config file:
+
+```yaml
+metadata: study-metadata.csv
+alignment_ref: ref.fa
+```
+--
+
+New Snakefile:
+
+```python
+configfile: "config.yml"
+...
+metadata = pd.read_csv(config['metadata'])
+...
+rule align:
+  input:
+    ref=config['alignment_ref'],
+    fastq="{p}.fq",
+  output:
+    "{p}.sam"
+  shell:
+    "bwa mem {input.ref} {input.fastq} &gt; {output}"
+
+```
+
+---
+
+# Snakemake cluster support
+
+Snakemake can automatically send jobs to cluster compute nodes for you (rather than manual `sbatch`)
+
+--
+
+At Lunenfeld, slurm compute engine:
+
+```bash
+snakemake --profile slurm --jobs 50
+```
+
+will execute&lt;sup&gt;1&lt;/sup&gt; 50 jobs in parallel, sending each to a compute node 
+
+.footnote[
+[1] Takes a little installation, see https://github.com/Snakemake-Profiles/slurm
+]
+
+--
+
+Back to example aligning `Anne.fq`, `Ben.fq`, `Clara.fq`:
+
+* Snakemake needs to call `rule align` 3 times
+* Now works out the `shell` for each and submits independently
+* All 3 (can be) executed in parallel
+
+---
+
+# Misc Snakemake observations
+
+1. Snakemake checks timestamps: if you update `Anne.fq`, Snakemake will rebuild `Anne.sam`: **exceptionally useful**
+
+--
+
+2. Snakemake can do a _dry run_ via `snakemake -n` - lets you know what it's planning on doing before doing it
+
+--
+
+3. Think about your directory structure. At minimum, want
+ * `raw-data/` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; where raw data is stored, **never modified**
+ * `pipeline/` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; where all scripts are kept
+ * `results/` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; where computational results and generated figures go
+
+--
+
+&gt; Q: Is my project reproducible?
+
+--
+
+Delete your `results/` directory and call snakemake: can you rebuild your entire project?
+
+--
+
+**So much more to explore**: https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html
+
+---
+
+# Original goals of reproducibility
+
+1. All the code _and instructions for executing the code_ to produce the output
+
+ &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 48c110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200-110.532 0-200-89.451-200-200 0-110.532 89.451-200 200-200m140.204 130.267l-22.536-22.718c-4.667-4.705-12.265-4.736-16.97-.068L215.346 303.697l-59.792-60.277c-4.667-4.705-12.265-4.736-16.97-.069l-22.719 22.536c-4.705 4.667-4.736 12.265-.068 16.971l90.781 91.516c4.667 4.705 12.265 4.736 16.97.068l172.589-171.204c4.704-4.668 4.734-12.266.067-16.971z"&gt;&lt;/path&gt;&lt;/svg&gt; Use Snakemake
+
+--
+
+2. To guard against sources of randomness in our workflow 
+
+ &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 48c110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200-110.532 0-200-89.451-200-200 0-110.532 89.451-200 200-200m140.204 130.267l-22.536-22.718c-4.667-4.705-12.265-4.736-16.97-.068L215.346 303.697l-59.792-60.277c-4.667-4.705-12.265-4.736-16.97-.069l-22.719 22.536c-4.705 4.667-4.736 12.265-.068 16.971l90.781 91.516c4.667 4.705 12.265 4.736 16.97.068l172.589-171.204c4.704-4.668 4.734-12.266.067-16.971z"&gt;&lt;/path&gt;&lt;/svg&gt; Use random seeds
+
+--
+
+3. To keep track of the software versions our workflow uses
+
+ &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 448c-110.532 0-200-89.431-200-200 0-110.495 89.472-200 200-200 110.491 0 200 89.471 200 200 0 110.53-89.431 200-200 200zm107.244-255.2c0 67.052-72.421 68.084-72.421 92.863V300c0 6.627-5.373 12-12 12h-45.647c-6.627 0-12-5.373-12-12v-8.659c0-35.745 27.1-50.034 47.579-61.516 17.561-9.845 28.324-16.541 28.324-29.579 0-17.246-21.999-28.693-39.784-28.693-23.189 0-33.894 10.977-48.942 29.969-4.057 5.12-11.46 6.071-16.666 2.124l-27.824-21.098c-5.107-3.872-6.251-11.066-2.644-16.363C184.846 131.491 214.94 112 261.794 112c49.071 0 101.45 38.304 101.45 88.8zM298 368c0 23.159-18.841 42-42 42s-42-18.841-42-42 18.841-42 42-42 42 18.841 42 42z"&gt;&lt;/path&gt;&lt;/svg&gt; &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 448c-110.532 0-200-89.431-200-200 0-110.495 89.472-200 200-200 110.491 0 200 89.471 200 200 0 110.53-89.431 200-200 200zm107.244-255.2c0 67.052-72.421 68.084-72.421 92.863V300c0 6.627-5.373 12-12 12h-45.647c-6.627 0-12-5.373-12-12v-8.659c0-35.745 27.1-50.034 47.579-61.516 17.561-9.845 28.324-16.541 28.324-29.579 0-17.246-21.999-28.693-39.784-28.693-23.189 0-33.894 10.977-48.942 29.969-4.057 5.12-11.46 6.071-16.666 2.124l-27.824-21.098c-5.107-3.872-6.251-11.066-2.644-16.363C184.846 131.491 214.94 112 261.794 112c49.071 0 101.45 38.304 101.45 88.8zM298 368c0 23.159-18.841 42-42 42s-42-18.841-42-42 18.841-42 42-42 42 18.841 42 42z"&gt;&lt;/path&gt;&lt;/svg&gt;
+ &lt;svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 448c-110.532 0-200-89.431-200-200 0-110.495 89.472-200 200-200 110.491 0 200 89.471 200 200 0 110.53-89.431 200-200 200zm107.244-255.2c0 67.052-72.421 68.084-72.421 92.863V300c0 6.627-5.373 12-12 12h-45.647c-6.627 0-12-5.373-12-12v-8.659c0-35.745 27.1-50.034 47.579-61.516 17.561-9.845 28.324-16.541 28.324-29.579 0-17.246-21.999-28.693-39.784-28.693-23.189 0-33.894 10.977-48.942 29.969-4.057 5.12-11.46 6.071-16.666 2.124l-27.824-21.098c-5.107-3.872-6.251-11.066-2.644-16.363C184.846 131.491 214.94 112 261.794 112c49.071 0 101.45 38.304 101.45 88.8zM298 368c0 23.159-18.841 42-42 42s-42-18.841-42-42 18.841-42 42-42 42 18.841 42 42z"&gt;&lt;/path&gt;&lt;/svg&gt;
+
+---
+
+# Language-specific solutions
+
+--
+
+.pull-left[
+## Python: conda environments
+
+* Save a copy of all Conda compatible packages 
+
+* Includes package versions
+
+* Export to `yaml` file to share
+
+]
+
+--
+
+.pull-right[
+
+## R: `renv` package&lt;sup&gt;1&lt;/sup&gt;
+
+.footnote[
+[1] https://rstudio.github.io/renv/articles/renv.html
+]
+
+* Successor to `packrat` package
+
+* Saves project-specific `R` libraries (with package versions)
+
+* Only solves the `R` package reproduciblity part
+
+]
+
+---
+
+# The nuclear option: Docker containers
+
+Can think of a docker container as a _computer within a computer_
+
+Contains _code_, _system tools_, _system libraries_, _config_
+
+--
+
+Effectively decouples the software from the hardware &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; software now reproducible regardless of executing system 
+
+--
+
+Create a plain text `Dockerfile` that describes what you want on your "computer":
+```bash
+# Install samtools
+RUN apt-get install -y samtools
+
+# Install ggplot2
+RUN Rscript -e "install.packages('ggplot2')"
+```
+
+--
+ 
+Snakemake has built in Singularity&lt;sup&gt;1&lt;/sup&gt; support: `
+snakemake --use-singularity`
+
+.footnote[
+[1] Singularity open source software that can run Docker containers
+]
+
+---
+
+# Questions
+
+Email: `kierancampbell@lunenfeld.ca`
+
+Lab website: https://www.camlab.ca
+
+---
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
