@@ -55,18 +55,18 @@ Given some input data, we would like to train a model that _accurately_ predicts
 --
 
 1. Given todays's weather (rainfall, hours of sunshine, average windspeed), will it rain tomorrow?
-   - **Input**: today's weather, **output**: tomorrow's weather
-
+  - **Input**: today's weather, **output**: tomorrow's weather
+  
 --
 
 2. Given a patient's laboratory test values (creatinine, glucose), does the patient have a particular disease?
   - **Input**: lab test values, **output**: diagnosis
-
+  
 --
-
+  
 3. Given a cancer biopsy gene expression measurement, what is the tissue of origin?
   - **Input**: gene expression for a given biopsy, **output**: cancer tissue of origin
-
+  
 ---
 
 # What's special compared to other prediction types?
@@ -145,7 +145,7 @@ Three ingredients of supervised ML
 
 --
 
-we aim to **iteratively improve the model to minimize the loss**.
+We aim to **iteratively improve the model to minimize the loss**.
 
 --
 
@@ -159,11 +159,9 @@ In probabilistic ML `r icon::fontawesome("arrow-right")` maximize joint probabil
 
 ---
 
-class: center, middle
+class: center, middle, inverse
 
 # Starting a supervised learning project
-
---
 
 Always ask
 
@@ -307,7 +305,7 @@ $$t_n = f_\theta(x_n) = wx_n + b$$
 
 --
 
-* $w$ known as the _weight_, $b$ the bias
+* $w$ known as the _weight_, $b$ the _bias_
 --
 
 * Loss now becomes
@@ -883,8 +881,25 @@ Python: [sklearn](https://scikit-learn.org/stable/auto_examples/linear_model/plo
 
 # Resources 
 
-Bishop's _Pattern Recognition and Machine Learning_ is [free online]http://users.isr.ist.utl.pt/~wurmd/Livros/school/Bishop%20-%20Pattern%20Recognition%20And%20Machine%20Learning%20-%20Springer%20%202006.pdf)
+* Bishop's _Pattern Recognition and Machine Learning_ is [free online](http://users.isr.ist.utl.pt/~wurmd/Livros/school/Bishop%20-%20Pattern%20Recognition%20And%20Machine%20Learning%20-%20Springer%20%202006.pdf)
 
+--
+
+* [scikit-learn](https://scikit-learn.org/stable/) one stop python shop for everything machine learning
+  * Many toy and real datasets readily available
+  * `pipeline` functionality very useful
+
+--
+
+[Kaggle](https://www.kaggle.com/) for competitions
+
+--
+
+Not mentioned: **visualization** of data before anything is **key**!
+
+--
+
+These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
 
 
 
