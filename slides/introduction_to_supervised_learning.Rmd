@@ -159,9 +159,9 @@ In probabilistic ML `r icon::fontawesome("arrow-right")` maximize joint probabil
 
 ---
 
-class: inverse, center, middle
+class: center, middle
 
-# The Great Divide
+# Starting a supervised learning project
 
 --
 
@@ -228,6 +228,13 @@ ggplot(df, aes(x = Input, y = Output)) +
 ```
 
 ]
+
+---
+
+class: inverse, center, middle
+
+# Regression (continuous outputs)
+
 
 ---
 
@@ -425,6 +432,460 @@ $\epsilon>0$ is known as the _learning rate_ or _step size_.
 
 * Important parameter to tune: too large and you overshoot, too small and it's inefficient
 
+
 ---
+
+class: inverse, center, middle
+
+# Logistic regression (discrete outputs)
+
+
+---
+
+
+# Logistic regression
+
+* Previously: $y_n$ was continuous `r icon::fontawesome("arrow-right")` regression
+* Now: $y_n$ binary i.e. $y_n = 0$ or $1$ `r icon::fontawesome("arrow-right")` logistic regression
+
+--
+
+Instead of modelling $y_n \approx t_n = wx_n + b$ we're now interested in modelling
+
+$$p(y_n=1 | x_n) $$
+--
+
+Examples
+
+* $y_n=1 \rightarrow$ patient has diabetes, $x_n \rightarrow$ blood glucose, $p(y_n=1 | x_n) \rightarrow$ "_what's the probability the patient has diabetes?_"
+* $y_n=1 \rightarrow$ CRISPR guide RNA has off target effect, $x_n \rightarrow$ GC content
+
+As before, require $(y_n, x_n)$ _training points_ for $n=1,\ldots,N$
+
+---
+
+# Loss function for logistic regression
+
+Let's define $\pi_n = p(y_n=1 | x_n)$. What is $p(y_n)$ ?
+
+
+--
+
+* If $y_n=1$ then $p(y_n) = \pi_n$
+--
+
+* If $y_n=0$ then $p(y_n) = 1-\pi_n$
+
+--
+
+We can write this as
+
+$$p(y_n) = \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$
+For multiple observations $y_1, \ldots, y_N$ we assume 
+
+$$p(y_1, \ldots, y_N) = \prod_{n=1}^N \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$
+--
+
+Normal to consider the log and maximize 
+$$\log p(y_1, \ldots, y_N) = \sum_{n=1}^N \left[ y_n \log(\pi_n) + (1-y_n) \log(1-\pi_n) \right]$$
+
+
+
+---
+
+# Logistic regression: modelling probabilities
+
+What's left? Need to specify how $\pi_n = p(y_n=1|x_n)$ depends on $x_n$ !
+
+.pull-left[
+Common choice: logistic function
+
+$$\pi_n = \frac{1}{1 + \exp\left( -(wx_n + b) \right)}$$
+]
+.pull-right[
+![PDAC subtypes](intro-ml_figs/1280px-Logistic-curve.svg.png)
+]
+
+Has the additional interpretation that the log-odds for a data point is linear in the covariates:
+
+$$\log \frac{\pi_n}{1-\pi_n} = wx_n + b$$
+
+???
+
+Many other possibilities for the function
+
+---
+
+# Putting it all together
+
+Our loss:
+
+$$l(w,b) = - \sum_{n=1}^N \left[ y_n \log(\pi_n) + (1-y_n) \log(1-\pi_n) \right]$$
+where
+
+$$\pi_n = \frac{1}{1 + \exp\left( -(wx_n + b) \right)}$$
+--
+
+Would like to minimize $l(w,b)$ wrt $w,b$
+
+* Could use gradient descent as before since derivatives of $l$ are computable
+* Better to use built-in implementations in R/Python/...
+
+
+---
+
+# Logistic regression example
+
+.pull-left[
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=4,fig.height=3}
+sigmoid <- function(x) {
+  1 / (1 + exp(-x))
+}
+
+x = runif(100)
+y = as.factor(round(sigmoid(5 * (x-0.5)) + rnorm(100, sd=0.05)))
+
+df <- tibble(
+  x=x,
+  y=y
+)
+
+y <- as.numeric(y)-1
+
+ggplot(df, aes(x = x, y = y)) +
+  geom_point() +
+  scale_y_discrete()
+```
+
+]
+
+--
+
+.pull-right[
+
+```{r warning=FALSE, message=FALSE, fig.width=4,fig.height=3}
+df <- data.frame(y = y, x = x)
+fit <- glm(y ~ x, data = df, 
+           family='binomial')
+df$predicted <- predict(fit, 
+                        type='response')
+
+ggplot(df, aes(x = x, y = y)) +
+  geom_point(alpha=.5) +
+  geom_line(aes(y = predicted), 
+            colour='darkred', size=1.5)
+```
+
+
+]
+
+---
+
+class: inverse, center, middle
+
+# Moving past linear to more complex models
+
+
+---
+
+# Moving past linear models
+
+So far we have modelled
+
+1. [Linear regression] The predicted output $t_n(x_n)$
+2. [Logistic regression] The conditional probabilities $p(y_n|x_n)$
+
+_linearly_ as a function of $x_n$ via $wx_n + b$
+
+Almost certainly underestimates complexity of true relationship:
+
+* Higher order moments, e.g. $x^2, x^3$
+* Interactions between inputs, e.g. if $\mathbf{x_n}$ is a vector, $x_{1,n} \times x_{2,n}$ 
+
+
+---
+
+# Examples of more complex algorithms
+
+1. Polynomial regression
+  
+  Model $y = m_0 + m_1 x + m_2 x^2 + m_3 x^3 + ...$
+  
+--
+  
+2. Decision trees / random forests
+  
+  Ask series of binary questions about input to arrive at output
+  
+--
+  
+3. Deep neural networks
+
+  Model output as series of function compositions $y_n = f_K(f_{K-1}(...f_1(x_n)...))$
+  
+  where 
+  
+  $$f_k(x) = \sigma(wx+b)$$
+  $\sigma$ often called _nonlinearity_, e.g. sigmoid, tanh, ReLU
+
+---
+
+# Controlling model complexity
+
+.pull-left[
+
+
+Consider
+
+$$y_n = x_n \log(x_n) + \epsilon_n$$
+$$\epsilon_n \sim \text{N}(0,1)$$
+
+> $\epsilon_n$ is drawn from a **N**ormal distribution with mean 0 and standard deviation 1
+
+
+]
+
+--
+
+.pull-right[
+```{r, fig.width=5, fig.height=3}
+set.seed(123456)
+x <- runif(100)
+y <- x * log(x) + 
+  rnorm(100, sd=0.1)
+qplot(x,y)
+```
+]
+
+
+---
+
+# Controlling model complexity
+
+.pull-left[
+
+## Linear fit 
+```{r, fig.width=5, fig.height=3}
+fit <- lm(y ~ x)
+df <- data.frame(x,y,
+                 t=predict(fit))
+
+ggplot(df, aes(x=x)) +
+  geom_point(aes(y=y)) +
+  geom_line(aes(y=t), colour='red')
+```
+
+]
+
+--
+
+.pull-right[
+
+## High degree polynomial fit
+
+```{r, fig.width=5, fig.height=3}
+fit <- lm(y ~ poly(x, 20))
+df <- data.frame(x,y,
+                 t=predict(fit))
+
+ggplot(df, aes(x=x)) +
+  geom_point(aes(y=y)) +
+  geom_line(aes(y=t), colour='red')
+```
+]
+
+---
+
+# How do we set the model complexity?
+
+Basic idea: tune model complexity by optimizing performance on held out dataset
+
+![](intro-ml_figs/ML_dataset_training_validation_test_sets.png)
+
+.center[Credit: _Wikipedia_]
+
+
+---
+
+# Practical example
+
+## Create train and test datasets
+
+$y_n = x_n + 5 x_n^2 + \epsilon, \; \; x_n \sim \text{Unif}(0,1), \epsilon \sim \text{N}(0, 0.01)$
+
+```{r}
+set.seed(123456)
+x_train <- runif(100); x_test <- runif(100)
+y_train <- x_train + 5 * x_train^2 + 
+  rnorm(100, sd=0.5)
+y_test <- x_train + 5 * x_train^2 + 
+  rnorm(100, sd=0.5)
+```
+
+--
+
+## Fit models on test sets
+
+```{r}
+models <- lapply(1:20, function(i) {
+  lm(y_train ~ poly(x_train, i))
+})
+```
+
+---
+
+# Practical example
+
+## Compute mean squared error on test set
+
+```{r}
+mse <- sapply(models, function(fit) {
+  test_predictions <- predict(fit, newdata=data.frame(x=x_test))
+  mean((y_test-test_predictions)^2)
+})
+```
+
+```{r, fig.width=7, fig.height=3, fig.align='center'}
+qplot(1:20, mse) +
+  labs(x = "Degree of polynomial", y = "Mean squared error (test)")
+```
+
+
+
+---
+
+# Overfitting and underfitting
+
+* If your model is too complex, it adapts to the noise in the training set `r icon::fontawesome("arrow-right")` **overfitting**
+
+--
+
+* If your model is too simple, it can't approximate the true function/decision boundary `r icon::fontawesome("arrow-right")` **underfitting**
+
+--
+
+.center[
+  <img src="intro-ml_figs/3x/model-complexity@3x.png" width=50%>
+  ]
+
+
+--
+
+* Closely related to bias-variance tradeoff
+
+
+---
+
+# Controlling model complexity: penalized models
+
+Popular method for controlling model complexity is penalizing coefficient size
+
+--
+
+Consider $P$ input variables `r icon::fontawesome("arrow-right")` $P$ coefficients
+
+$$y_n = \sum_{p=1}^P w_p x_{np} + \epsilon$$
+--
+
+Would like to keep entries of $\mathbf{w}$ _small_ and/or _sparse_
+
+--
+
+Do this by minimizing
+
+$$\text{MSE}(\mathbf{y}, \mathbf{t}) + \lambda \times \text{size}(\mathbf{w})$$
+--
+
+* How we specify $\text{size}(\mathbf{w})$ gives different properties 
+
+--
+
+* $\lambda$ controls the trade-off between predictive accuracy and model complexity
+
+--
+
+* Typically set $\lambda$ via optimizing accuracy on test set
+
+
+---
+
+# Choice of penalties
+
+.pull-left[
+
+## L2 norm (_Ridge_)
+
+Set $\text{size}(\mathbf{w}) = \sqrt{\sum_{p=1}^P w_p^2}$
+
+Leads to non-sparse solutions with small coefficients
+
+]
+
+--
+
+.pull-right[
+
+## L1 norm (_Lasso_)
+
+Set $\text{size}(\mathbf{w}) = \sum_{p=1}^P |w_p|$
+
+Leads to sparse solutions
+
+Combination L2 + L1 norms _elasticnet_
+
+]
+
+--
+
+
+## Implementations
+
+R: [glmnet](https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html)
+
+Python: [sklearn](https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_and_elasticnet.html)
+
+
+---
+
+# Wrap up
+
+1. Supervised learning requires existing input-output pair data
+
+--
+
+2. Output is continuous `r icon::fontawesome("arrow-right")` regression `r icon::fontawesome("arrow-right")`mean square error
+
+--
+
+3. Output is binary `r icon::fontawesome("arrow-right")` classification `r icon::fontawesome("arrow-right")` binary cross entropy
+
+--
+
+4. We can minimize loss functions in multiple ways including gradient descent
+
+--
+
+5. Many complex models beyond linear including random forests and deep neural networks
+
+--
+
+6. Using too complex a model can lead to _overfitting_
+
+--
+
+7. We can reduce model complexity by penalizing coefficient sizes
+
+--
+
+8. We can select model complexity by optimizing performance on a held-out test set
+
+---
+
+# Resources 
+
+Bishop's _Pattern Recognition and Machine Learning_ is [free online]http://users.isr.ist.utl.pt/~wurmd/Livros/school/Bishop%20-%20Pattern%20Recognition%20And%20Machine%20Learning%20-%20Springer%20%202006.pdf)
+
+
+
 
 ---
