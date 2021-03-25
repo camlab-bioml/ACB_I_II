@@ -1,6 +1,6 @@
 ---
 title: "An introduction to supervised machine learning"
-# subtitle: "⚔<br/>with xaringan"
+subtitle: "Advanced Computational Biology I"
 author: "Kieran Campbell"
 institute: "Lunenfeld Tanenbaum Research Institute & University of Toronto"
 date: "2021-02-22 (updated: `r Sys.Date()`)"

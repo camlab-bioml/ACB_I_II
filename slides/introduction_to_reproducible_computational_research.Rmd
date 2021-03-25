@@ -1,6 +1,6 @@
 ---
 title: "An introduction to reproducible computational research"
-# subtitle: "⚔<br/>with xaringan"
+subtitle: "Advanced Computational Biology I"
 author: "Kieran Campbell"
 institute: "Lunenfeld Tanenbaum Research Institute & University of Toronto"
 date: "2021-01-12 (updated: `r Sys.Date()`)"
