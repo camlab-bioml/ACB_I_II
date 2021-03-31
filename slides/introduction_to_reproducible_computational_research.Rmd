@@ -27,7 +27,7 @@ output:
 
 class: inverse, center, middle
 
-# Why work reproducibly?
+# What is reproducible research and why does it matter?
 
 ---
 
@@ -39,7 +39,7 @@ Given a fixed set of input data (e.g. gene expression data) we would like to re-
 
 --
 
-## Sounds obvious?
+## Sounds easy?
 
 --
 To achieve this, we need:
@@ -61,7 +61,7 @@ To achieve this, we need:
 
 # 3 reasons to work reproducibly
 
-## 1. Because you should
+## 1. The scientific process should be reproducible
 
 .pull-left[
 `r icon::fontawesome("flask")`
@@ -107,13 +107,19 @@ The _least_ we can do is make the computational workflow execution reproducible
 
 Imagine the first paper of your PhD got accepted, but 2 months after acceptance the journal asks for a higher-res version of figure 2
 
-**Non reproducible**: blind panic because you can't reproduce the figure<sup>1</sup>
+--
 
-**Reproducible**: easily rerun your computational workflow (specifying higher resolution), head to bar to celebrate paper acceptance
+### Non reproducible? 
 
-.footnote[
-[1] Definitely not based on a true story
-]
+> How on earth did I make that figure? 
+
+> My software/data/code has changed, now the figure looks different!
+
+--
+
+### Reproducible
+
+> I'll easily rerun this with a higher resolution setting
 
 
 ---
@@ -125,15 +131,16 @@ Imagine the first paper of your PhD got accepted, but 2 months after acceptance 
 
 Once you've made a workflow to run with _one_ parameter set, it's easy to extend to many.
 
+--
 
 E.g. in **Snakemake**
 ```python
-cohorts = ['Smith','Lin','Schapiro'] # Datasets
+datasets = ['Smith','Lin','Schapiro'] # Datasets
 num_clusters = range(2,30) # Number of clusters
 cluster_method = ['k_means','GMM'] # Clustering method
 
-output_files = expand("output/cluster_results_{c}_{n}_{m}.tsv",
-  c=cohorts,
+output_files = expand("output/cluster_results_{d}_{n}_{m}.tsv",
+  d=datasets,
   n=num_clusters,
   m=cluster_method)
 ```
@@ -261,6 +268,8 @@ Run `snakemake` from the command line and the rules get executed
 
 First example: list files in the directory `fastqs` and save them to `fastq_list.txt`
 
+--
+
 .pull-left[
 ```python
 rule list_files:
@@ -269,6 +278,7 @@ rule list_files:
   shell:
     "ls fastqs/ > {output}"
 ```
+
 
 How does Snakemake know we want to make `fastq_list.txt`?
 
@@ -352,6 +362,7 @@ rule all:
  * Input is e.g. `Anne.fq`
  * `bwa mem` is invoked via `bwa mem ref.fa reads.fq > aln-se.sam`
 
+--
 
 ```python
 rule align:
@@ -407,6 +418,7 @@ Snakemake will be angry with you if `Anne.fq` does not exist
 
 Say `Anne.fq` doesn't exist but needs created via Illumina's `bcl2fastq`<sup>1</sup>:
 
+--
 
 .footnote[
 [1] This isn't actually how `bcl2fastq` runs

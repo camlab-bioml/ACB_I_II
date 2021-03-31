@@ -17,7 +17,7 @@ class: center, middle, inverse, title-slide
 ## Advanced Computational Biology I
 ### Kieran Campbell
 ### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
-### 2021-01-12 (updated: 2021-03-25)
+### 2021-01-12 (updated: 2021-03-31)
 
 ---
 
@@ -35,7 +35,7 @@ class: center, middle, inverse, title-slide
 
 class: inverse, center, middle
 
-# Why work reproducibly?
+# What is reproducible research and why does it matter?
 
 ---
 
@@ -47,7 +47,7 @@ Given a fixed set of input data (e.g. gene expression data) we would like to re-
 
 --
 
-## Sounds obvious?
+## Sounds easy?
 
 --
 To achieve this, we need:
@@ -69,7 +69,7 @@ To achieve this, we need:
 
 # 3 reasons to work reproducibly
 
-## 1. Because you should
+## 1. The scientific process should be reproducible
 
 .pull-left[
 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M437.2 403.5L320 215V64h8c13.3 0 24-10.7 24-24V24c0-13.3-10.7-24-24-24H120c-13.3 0-24 10.7-24 24v16c0 13.3 10.7 24 24 24h8v151L10.8 403.5C-18.5 450.6 15.3 512 70.9 512h306.2c55.7 0 89.4-61.5 60.1-108.5zM137.9 320l48.2-77.6c3.7-5.2 5.8-11.6 5.8-18.4V64h64v160c0 6.9 2.2 13.2 5.8 18.4l48.2 77.6h-172z"&gt;&lt;/path&gt;&lt;/svg&gt;
@@ -115,13 +115,19 @@ The _least_ we can do is make the computational workflow execution reproducible
 
 Imagine the first paper of your PhD got accepted, but 2 months after acceptance the journal asks for a higher-res version of figure 2
 
-**Non reproducible**: blind panic because you can't reproduce the figure&lt;sup&gt;1&lt;/sup&gt;
+--
 
-**Reproducible**: easily rerun your computational workflow (specifying higher resolution), head to bar to celebrate paper acceptance
+### Non reproducible? 
 
-.footnote[
-[1] Definitely not based on a true story
-]
+&gt; How on earth did I make that figure? 
+
+&gt; My software/data/code has changed, now the figure looks different!
+
+--
+
+### Reproducible
+
+&gt; I'll easily rerun this with a higher resolution setting
 
 
 ---
@@ -133,15 +139,16 @@ Imagine the first paper of your PhD got accepted, but 2 months after acceptance 
 
 Once you've made a workflow to run with _one_ parameter set, it's easy to extend to many.
 
+--
 
 E.g. in **Snakemake**
 ```python
-cohorts = ['Smith','Lin','Schapiro'] # Datasets
+datasets = ['Smith','Lin','Schapiro'] # Datasets
 num_clusters = range(2,30) # Number of clusters
 cluster_method = ['k_means','GMM'] # Clustering method
 
-output_files = expand("output/cluster_results_{c}_{n}_{m}.tsv",
-  c=cohorts,
+output_files = expand("output/cluster_results_{d}_{n}_{m}.tsv",
+  d=datasets,
   n=num_clusters,
   m=cluster_method)
 ```
@@ -174,7 +181,7 @@ runif(5)
 ```
 
 ```
-## [1] 0.49649722 0.48737342 0.89900479 0.08608249 0.89292939
+## [1] 0.3581766 0.7117951 0.6655657 0.8798392 0.8351118
 ```
 
 We want our numbers to be **random** but also **reproducible**&lt;sup&gt;1&lt;/sup&gt;
@@ -201,7 +208,7 @@ print(runif(3))
 ```
 
 ```
-## [1] 0.3975508 0.5308851 0.2399371
+## [1] 0.2831760 0.1893244 0.6824017
 ```
 
 ```r
@@ -209,7 +216,7 @@ print(runif(3))
 ```
 
 ```
-## [1] 0.14720375 0.76455025 0.02877053
+## [1] 0.5699579 0.2020336 0.5631200
 ```
 ]
 
@@ -298,6 +305,8 @@ Run `snakemake` from the command line and the rules get executed
 
 First example: list files in the directory `fastqs` and save them to `fastq_list.txt`
 
+--
+
 .pull-left[
 ```python
 rule list_files:
@@ -306,6 +315,7 @@ rule list_files:
   shell:
     "ls fastqs/ &gt; {output}"
 ```
+
 
 How does Snakemake know we want to make `fastq_list.txt`?
 
@@ -389,6 +399,7 @@ rule all:
  * Input is e.g. `Anne.fq`
  * `bwa mem` is invoked via `bwa mem ref.fa reads.fq &gt; aln-se.sam`
 
+--
 
 ```python
 rule align:
@@ -444,6 +455,7 @@ Snakemake will be angry with you if `Anne.fq` does not exist
 
 Say `Anne.fq` doesn't exist but needs created via Illumina's `bcl2fastq`&lt;sup&gt;1&lt;/sup&gt;:
 
+--
 
 .footnote[
 [1] This isn't actually how `bcl2fastq` runs
