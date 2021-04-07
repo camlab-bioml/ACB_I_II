@@ -17,7 +17,7 @@ class: center, middle, inverse, title-slide
 ## Advanced Computational Biology I
 ### Kieran Campbell
 ### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
-### 2021-02-22 (updated: 2021-03-25)
+### 2021-02-22 (updated: 2021-04-07)
 
 ---
 
@@ -101,16 +101,14 @@ class: top
 
 # What's different from supervised?
 
-
-
 Unsupervised learning (typically) has no outputs measured&lt;sup&gt;1&lt;/sup&gt;
-.footnote[
-[1] Very common in biomedical applications
-]
 
+
+--
 
 Instead we "find structure" in the data
 
+--
 
 ## Examples
 
@@ -118,16 +116,24 @@ Instead we "find structure" in the data
 
 2. **Clinical oncology**: are there subtypes of breast cancer that have similar prognosis / respond similarly to treatment?
 
+--
 
 ###  The line between supervised and unsupervised learning is not always clear cut!
 
----
+.footnote[
+[1] Very common in biomedical applications
+]
 
-class: center
 
-# Gene expression subtypes of pancreatic cancer
+&lt;!-- --- --&gt;
 
-![PDAC subtypes](intro-ml_figs/pdac-subtypes.png)
+&lt;!-- class: center --&gt;
+
+&lt;!-- # Gene expression subtypes of pancreatic cancer --&gt;
+
+&lt;!-- ![PDAC subtypes](intro-ml_figs/pdac-subtypes.png) --&gt;
+
+&lt;!-- --- --&gt;
 
 ---
 
@@ -221,13 +227,15 @@ class: inverse, center, middle
 
 Example problem: predict reduction in tumor volume given expression of a gene
 
+--
+
 ## Notation
 
-`\(N\)` samples indexed by `\(n = 1, \ldots, N\)`, _e.g. `\(N\)` patients_
+`\(N\)` samples indexed by `\(n = 1, \ldots, N\)`, &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; `\(N\)` patients
 
 --
 
-Input data `\(x_n \in \mathbb{R}\)` for each sample&lt;sup&gt;1&lt;/sup&gt;, _e.g. expression of gene_
+Input data `\(x_n \in \mathbb{R}\)` for each sample&lt;sup&gt;1&lt;/sup&gt;, &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; expression of genes
 
 .footnote[
 [1] In general high dimensional, but we can assume low dimensional here
@@ -318,93 +326,7 @@ So how do we minimize `\(\mathrm{MSE(\mathbf{t}, \mathbf{y})}\)`? Strategies:
 
 3. &lt;svg viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M528.1 171.5L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6zM388.6 312.3l23.7 138.4L288 385.4l-124.3 65.3 23.7-138.4-100.6-98 139-20.2 62.2-126 62.2 126 139 20.2-100.6 98z"&gt;&lt;/path&gt;&lt;/svg&gt; Numerical methods &lt;svg viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M528.1 171.5L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6zM388.6 312.3l23.7 138.4L288 385.4l-124.3 65.3 23.7-138.4-100.6-98 139-20.2 62.2-126 62.2 126 139 20.2-100.6 98z"&gt;&lt;/path&gt;&lt;/svg&gt;
  * Giant scientific field
- * Introduce _gradient descent_ here &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; good in high dimensional problems where gradients of the loss w.r.t. the parameters are available
-
----
-
-background-image: url('intro-ml_figs/mountain.jpg')
-background-position: center
-background-size: contain
-class: inverse
-
-
-# Gradient descent
-
-
-You're at the top of a mountain, it's getting dark, and you need to get down
---
- 
-* Your position `\((x,y)\)` is your parameter space `\((w,b)\)` to explore
-
---
- 
-* Your height is `\(\mathrm{MSE(\mathbf{t}, \mathbf{y})}\)` you want to minimize
-
---
-
-## Q: What's the strategy?
-
---
-
-Take successive little steps downhill until things flatten out
-
---
-
-## Local optimality
-
-Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
-
- &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; Big problem depending on shape of your mountain / loss function
-
----
-
-# What is downhill?
-
-&gt; successive little steps downhill
-
---
-
-.pull-left[
-Consider `\(y=(x-1)^2\)`, `\(\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)\)`
-]
-
-.pull-right[
-&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-4-1.png" style="display: block; margin: auto;" /&gt;
-]
-
---
-
-Notice:
-* When `\(x &gt; 1\)` we want to go to the _left_ and `\(\frac{\mathrm{d}y}{\mathrm{d}x} &gt; 0\)`
-* When `\(x &lt; 1\)` we want to go to the _right_ and  `\(\frac{\mathrm{d}y}{\mathrm{d}x} &lt; 0\)`
-
-The sign of the gradient always points uphill!
-
----
-
-# Gradient descent
-
-This suggests an iterative scheme:
-
-1. Initialize some values for `\((w,b)\)`
-
---
-
-2. For a given number of steps:
- * Update `\(w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}\)`
- * Update `\(b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}\)`
-
---
-
-3. Monitor `\(MSE(\mathbf{t}, \mathbf{y}; w, b)\)` - if it "levels off" we can end with the optimal values `\((w,b)\)`
-
---
-
-## Learning rate
-
-`\(\epsilon&gt;0\)` is known as the _learning rate_ or _step size_. 
-
-* Important parameter to tune: too large and you overshoot, too small and it's inefficient
+ * _gradient descent_ increasingly popular &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; good in high dimensional problems where gradients of the loss w.r.t. the parameters are available
 
 
 ---
@@ -431,8 +353,15 @@ $$p(y_n=1 | x_n) $$
 
 Examples
 
-* `\(y_n=1 \rightarrow\)` patient has diabetes, `\(x_n \rightarrow\)` blood glucose, `\(p(y_n=1 | x_n) \rightarrow\)` "_what's the probability the patient has diabetes?_"
-* `\(y_n=1 \rightarrow\)` CRISPR guide RNA has off target effect, `\(x_n \rightarrow\)` GC content
+--
+
+* `\(y_n=1\)` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; patient has diabetes, `\(x_n\)` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; blood glucose, `\(p(y_n=1 | x_n)\)` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; "_what's the probability the patient has diabetes given the blood glucose measurement?_"
+
+--
+
+* `\(y_n=1\)` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; CRISPR guide RNA has off target effect, `\(x_n\)` &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; GC content
+
+--
 
 As before, require `\((y_n, x_n)\)` _training points_ for `\(n=1,\ldots,N\)`
 
@@ -455,12 +384,14 @@ Let's define `\(\pi_n = p(y_n=1 | x_n)\)`. What is `\(p(y_n)\)` ?
 We can write this as
 
 `$$p(y_n) = \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$`
+--
+
 For multiple observations `\(y_1, \ldots, y_N\)` we assume 
 
 `$$p(y_1, \ldots, y_N) = \prod_{n=1}^N \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$`
 --
 
-Normal to consider the log and maximize 
+Consider the log and maximize 
 `$$\log p(y_1, \ldots, y_N) = \sum_{n=1}^N \left[ y_n \log(\pi_n) + (1-y_n) \log(1-\pi_n) \right]$$`
 
 
@@ -479,6 +410,8 @@ Common choice: logistic function
 .pull-right[
 ![PDAC subtypes](intro-ml_figs/1280px-Logistic-curve.svg.png)
 ]
+
+--
 
 Has the additional interpretation that the log-odds for a data point is linear in the covariates:
 
@@ -511,7 +444,7 @@ Would like to minimize `\(l(w,b)\)` wrt `\(w,b\)`
 # Logistic regression example
 
 .pull-left[
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -533,7 +466,7 @@ ggplot(df, aes(x = x, y = y)) +
             colour='darkred', size=1.5)
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
 
 
 ]
@@ -555,6 +488,8 @@ So far we have modelled
 2. [Logistic regression] The conditional probabilities `\(p(y_n|x_n)\)`
 
 _linearly_ as a function of `\(x_n\)` via `\(wx_n + b\)`
+
+--
 
 Almost certainly underestimates complexity of true relationship:
 
@@ -616,7 +551,7 @@ y &lt;- x * log(x) +
 qplot(x,y)
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
 ]
 
 
@@ -638,7 +573,7 @@ ggplot(df, aes(x=x)) +
   geom_line(aes(y=t), colour='red')
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -659,14 +594,18 @@ ggplot(df, aes(x=x)) +
   geom_line(aes(y=t), colour='red')
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
 ]
 
 ---
 
 # How do we set the model complexity?
 
+--
+
 Basic idea: tune model complexity by optimizing performance on held out dataset
+
+--
 
 ![](intro-ml_figs/ML_dataset_training_validation_test_sets.png)
 
@@ -722,7 +661,7 @@ qplot(1:20, mse) +
   labs(x = "Degree of polynomial", y = "Mean squared error (test)")
 ```
 
-&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
 
 
 
@@ -878,6 +817,94 @@ Not mentioned: **visualization** of data before anything is **key**!
 These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
 
 
+
+---
+
+---
+
+background-image: url('intro-ml_figs/mountain.jpg')
+background-position: center
+background-size: contain
+class: inverse
+
+
+# Gradient descent
+
+
+You're at the top of a mountain, it's getting dark, and you need to get down
+--
+ 
+* Your position `\((x,y)\)` is your parameter space `\((w,b)\)` to explore
+
+--
+ 
+* Your height is `\(\mathrm{MSE(\mathbf{t}, \mathbf{y})}\)` you want to minimize
+
+--
+
+## Q: What's the strategy?
+
+--
+
+Take successive little steps downhill until things flatten out
+
+--
+
+## Local optimality
+
+Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
+
+ &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; Big problem depending on shape of your mountain / loss function
+
+---
+
+# What is downhill?
+
+&gt; successive little steps downhill
+
+--
+
+.pull-left[
+Consider `\(y=(x-1)^2\)`, `\(\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)\)`
+]
+
+.pull-right[
+&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+]
+
+--
+
+Notice:
+* When `\(x &gt; 1\)` we want to go to the _left_ and `\(\frac{\mathrm{d}y}{\mathrm{d}x} &gt; 0\)`
+* When `\(x &lt; 1\)` we want to go to the _right_ and  `\(\frac{\mathrm{d}y}{\mathrm{d}x} &lt; 0\)`
+
+The sign of the gradient always points uphill!
+
+---
+
+# Gradient descent
+
+This suggests an iterative scheme:
+
+1. Initialize some values for `\((w,b)\)`
+
+--
+
+2. For a given number of steps:
+ * Update `\(w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}\)`
+ * Update `\(b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}\)`
+
+--
+
+3. Monitor `\(MSE(\mathbf{t}, \mathbf{y}; w, b)\)` - if it "levels off" we can end with the optimal values `\((w,b)\)`
+
+--
+
+## Learning rate
+
+`\(\epsilon&gt;0\)` is known as the _learning rate_ or _step size_. 
+
+* Important parameter to tune: too large and you overshoot, too small and it's inefficient
 
 ---
     </textarea>

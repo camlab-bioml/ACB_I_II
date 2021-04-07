@@ -99,16 +99,14 @@ class: top
 
 # What's different from supervised?
 
-
-
 Unsupervised learning (typically) has no outputs measured<sup>1</sup>
-.footnote[
-[1] Very common in biomedical applications
-]
 
+
+--
 
 Instead we "find structure" in the data
 
+--
 
 ## Examples
 
@@ -116,16 +114,24 @@ Instead we "find structure" in the data
 
 2. **Clinical oncology**: are there subtypes of breast cancer that have similar prognosis / respond similarly to treatment?
 
+--
 
 ###  The line between supervised and unsupervised learning is not always clear cut!
 
----
+.footnote[
+[1] Very common in biomedical applications
+]
 
-class: center
 
-# Gene expression subtypes of pancreatic cancer
+<!-- --- -->
 
-![PDAC subtypes](intro-ml_figs/pdac-subtypes.png)
+<!-- class: center -->
+
+<!-- # Gene expression subtypes of pancreatic cancer -->
+
+<!-- ![PDAC subtypes](intro-ml_figs/pdac-subtypes.png) -->
+
+<!-- --- -->
 
 ---
 
@@ -240,13 +246,15 @@ class: inverse, center, middle
 
 Example problem: predict reduction in tumor volume given expression of a gene
 
+--
+
 ## Notation
 
-$N$ samples indexed by $n = 1, \ldots, N$, _e.g. $N$ patients_
+$N$ samples indexed by $n = 1, \ldots, N$, `r icon::fontawesome("arrow-right")` $N$ patients
 
 --
 
-Input data $x_n \in \mathbb{R}$ for each sample<sup>1</sup>, _e.g. expression of gene_
+Input data $x_n \in \mathbb{R}$ for each sample<sup>1</sup>, `r icon::fontawesome("arrow-right")` expression of genes
 
 .footnote[
 [1] In general high dimensional, but we can assume low dimensional here
@@ -337,98 +345,7 @@ So how do we minimize $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$? Strategies:
 
 3. `r icon::fontawesome("star")` Numerical methods `r icon::fontawesome("star")`
  * Giant scientific field
- * Introduce _gradient descent_ here `r icon::fontawesome("arrow-right")` good in high dimensional problems where gradients of the loss w.r.t. the parameters are available
-
----
-
-background-image: url('intro-ml_figs/mountain.jpg')
-background-position: center
-background-size: contain
-class: inverse
-
-
-# Gradient descent
-
-
-You're at the top of a mountain, it's getting dark, and you need to get down
---
- 
-* Your position $(x,y)$ is your parameter space $(w,b)$ to explore
-
---
- 
-* Your height is $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$ you want to minimize
-
---
-
-## Q: What's the strategy?
-
---
-
-Take successive little steps downhill until things flatten out
-
---
-
-## Local optimality
-
-Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
-
- `r icon::fontawesome("arrow-right")` Big problem depending on shape of your mountain / loss function
-
----
-
-# What is downhill?
-
-> successive little steps downhill
-
---
-
-.pull-left[
-Consider $y=(x-1)^2$, $\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)$
-]
-
-.pull-right[
-```{r, echo=FALSE, fig.align='center', fig.width=4,fig.height=4}
-ggplot() + xlim(-3, 5) + 
-  geom_function(fun = function(x) (x-1)^2) + 
-  geom_vline(xintercept = 1, color='grey50', linetype=2) +
-  labs(x="x", y="y")
-```
-]
-
---
-
-Notice:
-* When $x > 1$ we want to go to the _left_ and $\frac{\mathrm{d}y}{\mathrm{d}x} > 0$
-* When $x < 1$ we want to go to the _right_ and  $\frac{\mathrm{d}y}{\mathrm{d}x} < 0$
-
-The sign of the gradient always points uphill!
-
----
-
-# Gradient descent
-
-This suggests an iterative scheme:
-
-1. Initialize some values for $(w,b)$
-
---
-
-2. For a given number of steps:
- * Update $w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
- * Update $b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
-
---
-
-3. Monitor $MSE(\mathbf{t}, \mathbf{y}; w, b)$ - if it "levels off" we can end with the optimal values $(w,b)$
-
---
-
-## Learning rate
-
-$\epsilon>0$ is known as the _learning rate_ or _step size_. 
-
-* Important parameter to tune: too large and you overshoot, too small and it's inefficient
+ * _gradient descent_ increasingly popular `r icon::fontawesome("arrow-right")` good in high dimensional problems where gradients of the loss w.r.t. the parameters are available
 
 
 ---
@@ -455,8 +372,15 @@ $$p(y_n=1 | x_n) $$
 
 Examples
 
-* $y_n=1 \rightarrow$ patient has diabetes, $x_n \rightarrow$ blood glucose, $p(y_n=1 | x_n) \rightarrow$ "_what's the probability the patient has diabetes?_"
-* $y_n=1 \rightarrow$ CRISPR guide RNA has off target effect, $x_n \rightarrow$ GC content
+--
+
+* $y_n=1$ `r icon::fontawesome("arrow-right")` patient has diabetes, $x_n$ `r icon::fontawesome("arrow-right")` blood glucose, $p(y_n=1 | x_n)$ `r icon::fontawesome("arrow-right")` "_what's the probability the patient has diabetes given the blood glucose measurement?_"
+
+--
+
+* $y_n=1$ `r icon::fontawesome("arrow-right")` CRISPR guide RNA has off target effect, $x_n$ `r icon::fontawesome("arrow-right")` GC content
+
+--
 
 As before, require $(y_n, x_n)$ _training points_ for $n=1,\ldots,N$
 
@@ -479,12 +403,14 @@ Let's define $\pi_n = p(y_n=1 | x_n)$. What is $p(y_n)$ ?
 We can write this as
 
 $$p(y_n) = \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$
+--
+
 For multiple observations $y_1, \ldots, y_N$ we assume 
 
 $$p(y_1, \ldots, y_N) = \prod_{n=1}^N \pi_n^{y_n} (1-\pi_n)^{1-y_n}$$
 --
 
-Normal to consider the log and maximize 
+Consider the log and maximize 
 $$\log p(y_1, \ldots, y_N) = \sum_{n=1}^N \left[ y_n \log(\pi_n) + (1-y_n) \log(1-\pi_n) \right]$$
 
 
@@ -503,6 +429,8 @@ $$\pi_n = \frac{1}{1 + \exp\left( -(wx_n + b) \right)}$$
 .pull-right[
 ![PDAC subtypes](intro-ml_figs/1280px-Logistic-curve.svg.png)
 ]
+
+--
 
 Has the additional interpretation that the log-odds for a data point is linear in the covariates:
 
@@ -594,6 +522,8 @@ So far we have modelled
 2. [Logistic regression] The conditional probabilities $p(y_n|x_n)$
 
 _linearly_ as a function of $x_n$ via $wx_n + b$
+
+--
 
 Almost certainly underestimates complexity of true relationship:
 
@@ -696,7 +626,11 @@ ggplot(df, aes(x=x)) +
 
 # How do we set the model complexity?
 
+--
+
 Basic idea: tune model complexity by optimizing performance on held out dataset
+
+--
 
 ![](intro-ml_figs/ML_dataset_training_validation_test_sets.png)
 
@@ -902,5 +836,98 @@ Not mentioned: **visualization** of data before anything is **key**!
 These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
 
 
+
+---
+
+---
+
+background-image: url('intro-ml_figs/mountain.jpg')
+background-position: center
+background-size: contain
+class: inverse
+
+
+# Gradient descent
+
+
+You're at the top of a mountain, it's getting dark, and you need to get down
+--
+ 
+* Your position $(x,y)$ is your parameter space $(w,b)$ to explore
+
+--
+ 
+* Your height is $\mathrm{MSE(\mathbf{t}, \mathbf{y})}$ you want to minimize
+
+--
+
+## Q: What's the strategy?
+
+--
+
+Take successive little steps downhill until things flatten out
+
+--
+
+## Local optimality
+
+Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
+
+ `r icon::fontawesome("arrow-right")` Big problem depending on shape of your mountain / loss function
+
+---
+
+# What is downhill?
+
+> successive little steps downhill
+
+--
+
+.pull-left[
+Consider $y=(x-1)^2$, $\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)$
+]
+
+.pull-right[
+```{r, echo=FALSE, fig.align='center', fig.width=4,fig.height=4}
+ggplot() + xlim(-3, 5) + 
+  geom_function(fun = function(x) (x-1)^2) + 
+  geom_vline(xintercept = 1, color='grey50', linetype=2) +
+  labs(x="x", y="y")
+```
+]
+
+--
+
+Notice:
+* When $x > 1$ we want to go to the _left_ and $\frac{\mathrm{d}y}{\mathrm{d}x} > 0$
+* When $x < 1$ we want to go to the _right_ and  $\frac{\mathrm{d}y}{\mathrm{d}x} < 0$
+
+The sign of the gradient always points uphill!
+
+---
+
+# Gradient descent
+
+This suggests an iterative scheme:
+
+1. Initialize some values for $(w,b)$
+
+--
+
+2. For a given number of steps:
+ * Update $w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
+ * Update $b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{MSE(\mathbf{t}, \mathbf{y}; w, b)}$
+
+--
+
+3. Monitor $MSE(\mathbf{t}, \mathbf{y}; w, b)$ - if it "levels off" we can end with the optimal values $(w,b)$
+
+--
+
+## Learning rate
+
+$\epsilon>0$ is known as the _learning rate_ or _step size_. 
+
+* Important parameter to tune: too large and you overshoot, too small and it's inefficient
 
 ---
