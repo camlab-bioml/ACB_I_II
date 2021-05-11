@@ -42,7 +42,7 @@ theme_set(cowplot::theme_cowplot())
 1. A historical perspective on continuous latent variable models
 2. Principal component analysis and pPCA
 3. Non-negative matrix factorization
-4. Autoencoders
+4. Nonlinear methods: tSNE & autoencoders
 
 ---
 
@@ -217,7 +217,7 @@ Aims to project data onto a space $K < P$  such that
 
 --
 
-* The projection of points onto the 1st component retains the most variance
+* The projection of points onto the first component retains the most variance
 
 --
 
@@ -551,7 +551,58 @@ but we may wish to learn more flexible, nonlinear embeddings that capture more c
 
 --
 
-## Autoencoders
+Let's look at
+
+1. tSNE
+
+2. Autoencoders
+
+---
+
+# t-distributed stochastic neighbour embedding  (tSNE)
+
+<!-- Compute "conditional neighbour probabilities" -->
+
+<!-- $$p_{j|i} = \frac{\exp(-||\mathbf{y}_i - \mathbf{y}_j||^2/2\sigma_i^2)}{\sum_{k\neq i} \exp(-||\mathbf{y}_i - \mathbf{y}_k ||^2/2\sigma_i^2)}$$ -->
+<!-- and symmetrize to make $p_{ij} = (p_{j|i} + p_{i|j})/2N$ -->
+
+<!-- then introduce -->
+
+<!-- $$q_{ij} = $$ -->
+
+tSNE `r Cite(bib, "van2008visualizing")` is a method for learning non-linear reduced-dimension representations
+
+.pull-left[
+* No explicit forward or reverse map
+
+* _Perplexity_ parameter controls crowdedness of representation
+
+* Reproduces local similarity more faithfully than global similarity
+
+* _Very_ popular in single-cell transcriptomics
+
+
+**How to Use t-SNE Effectively**: https://distill.pub/2016/misread-tsne/
+
+
+]
+
+.pull-right[
+.center[
+<img src="unsupervised-learning-figs/tabulamuris.png" width=400>
+]
+]
+
+
+
+.footnote[
+Image: `r Cite(bib, "tabula2018single")`
+]
+
+
+---
+
+# Autoencoders
 
 One approach is to
 
