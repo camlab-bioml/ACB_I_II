@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Unsupervised learning: mixture models</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Kieran Campbell" />
+    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Unsupervised learning: mixture models
+## Advanced Computational Biology II
+### Kieran Campbell
+### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
+### 2021-02-22 (updated: 2021-05-11)
+
+---
+
+
+class: inverse, middle
+
+
+
+&lt;style type="text/css"&gt;
+.footnote {
+  border-top: 2px solid black;
+}
+&lt;/style&gt;
+
+# What we'll cover
+
+
+* Clustering from a probabilistic perspective
+* Gaussian Mixture Models
+* Expectation-maxization
+* Model selection
+
+
+&lt;!-- --- --&gt;
+
+&lt;!-- # Conventions --&gt;
+
+&lt;!-- * We'll have `\(N\)` samples indexed `\(n = 1, \ldots, N\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- * When an output is multidimensional, we'll refer to output dimensions as `\(p=1,\ldots,P\)` --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- * We define a _latent variable_ as a sample specific unobserved variable --&gt;
+&lt;!--   * e.g. "What cluster does sample `\(n\)` belong to?" --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- * Latent variables are `\(z_n\)` (possibly high dimensional, possibly discrete) --&gt;
+
+&lt;!-- -- --&gt;
+
+&lt;!-- * Observed variables are `\(y_n\)` --&gt;
+
+
+---
+
+# What is a discrete latent variable model?
+
+Suppose we have `\(N\)` samples indexed `\(n=1,\ldots,N\)`
+
+* e.g. `\(N\)` cells, `\(N\)` patients, etc.
+
+--
+
+We would like to assign each of the samples to one of `\(C\)` distinct groups or _clusters_
+
+--
+
+Introduce _indicator_ variable `\(z_n\)` that describes group membership
+
+* e.g. `\(z_4 = 3\)` means _sample 4 belongs to cluster 3_
+
+--
+
+.pull-left[
+
+## Example (k-means)
+
+* `\(z_1 = z_2 = \mathrm{red}\)`
+* `\(z_5 = \mathrm{green}\)`
+* etc.
+
+]
+.pull-right[
+  &lt;img src="unsupervised-learning-figs/K_Means_Example_Step_4.svg.png" width="80%"&gt;
+  ]
+
+---
+
+# Probabilistic clustering
+
+Often on noisy, real data
+
+1. Cluster membership is not clear-cut
+2. We would like to reason about cluster assignment uncertainty
+
+--
+
+Rather than hard-assign samples to clusters, we reason about
+
+`$$p(z_n=c | \texttt{Data})$$`
+read as
+
+&gt; The probability sample `\(n\)` belongs to cluster `\(c\)` given everything I've measured
+
+--
+
+.center[
+  &lt;img src="unsupervised-learning-figs/cluster_assignment_probability.png" width="60%"&gt;
+  ]
+
+---
+
+# Probabilistic clustering (II)
+
+So how do we compute `\(p(z_n=c | \texttt{Data})\)`?
+
+--
+
+Remember Bayes' rule: `\(p(A|B) = \frac{p(B|A)p(A)}{p(B)}\)`
+
+--
+
+Plugging in: 
+
+`$$p(z_n=c | \texttt{Data}) = \frac{p(\texttt{Data} | z_n=c)p(z_n=c)}{\sum_{c'=1}^C p(\texttt{Data} | z_n=c')p(z_n=c')}$$`
+
+--
+
+`\(p(\texttt{Data} | z_n=c)\)` 
+
+  &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; _what is the distribution of the data given it's assigned to cluster `\(c\)`?_
+
+--
+
+`\(p(z_n=c) = \pi_c\)` 
+
+  &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; _what's my prior expectation sample `\(n\)` originates from cluster `\(c\)`?_
+
+---
+
+# Gaussian mixture models
+
+Can specify `\(p(\texttt{Data} | z_n=c)\)` in many ways
+
+--
+
+If `\(\texttt{Data} = (y_1,\ldots,y_N)\)` and `\(y_n \in \mathbb{R}\)` then common choice is
+
+`$$p(y_n|z_n=c) = \mathcal{N}(y_n | \mu_c, \sigma^2_c)$$`
+--
+
+Each component is defined by a Gaussian distribution with its own mean and variance
+
+--
+
+Commonly known as a _Gaussian Mixture Model_ (GMM)
+
+
+---
+
+# Simulating from a GMM
+
+Let's simulate data for 100 samples and 2 clusters, with 
+
+* `\(\mu_1 = -1\)`, `\(\mu_2 = 2\)`
+* `\(\sigma_1 = 0.5\)`, `\(\sigma_2 = 0.1\)`
+* `\(p(z_n = 1) = \pi_1 = 1 - \pi_2 = 0.7\)`
+
+--
+
+
+```r
+N &lt;- 1000; C &lt;- 2
+mu_1 &lt;- -1; mu_2 &lt;- 2
+sigma_1 &lt;- 0.5; sigma_2 &lt;- 0.1
+pi_1 &lt;- 0.7
+```
+
+--
+
+Assign cluster memberships:
+
+
+```r
+z &lt;- sample(c(1,2), size=N, replace=TRUE, prob=c(pi_1, 1-pi_1))
+print(head(z))
+```
+
+```
+## [1] 1 2 1 1 2 2
+```
+
+---
+
+# GMMs (II)
+
+
+```r
+y &lt;- rep(NA, N)
+
+for(n in 1:N) {
+  if(z[n] == 1) y[n] &lt;- rnorm(1, mean=mu_1, sd=sigma_1)
+  if(z[n] == 2) y[n] &lt;- rnorm(1, mean=mu_2, sd=sigma_2)
+}
+```
+
+--
+
+
+```r
+qplot(y, fill = factor(z), bins=50)
+```
+
+&lt;img src="unsupervised_learning_discrete_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+# Inference for mixture models
+
+How can we infer the cluster parameters `\(\mathbf{\mu} = \{\mu_1,\ldots,\mu_C\}\)`, `\(\mathbf{\sigma} = \{\sigma_1,\ldots,\sigma_C\}\)` and the cluster memberships `\(z_n\)`?
+
+--
+
+Maximize the log-likelihood:
+
+`$$\log p(\texttt{Data} | \mathbf{\mu}, \mathbf{\sigma}) = \sum_{n=1}^N \log \sum_{c=1}^C \pi_c p(y_n | \mu_c, \sigma_c)$$`
+
+--
+
+Afterwards we can compute cluster membership using Bayes' rule to find 
+
+`$$p(z_n=c|y_n, \hat{\mathbf{\mu}}, \hat{\mathbf{\sigma}})$$`
+
+where `\(\hat{\mathbf{\mu}}, \hat{\mathbf{\sigma}}\)` are the maximum likelihood estimates
+
+
+
+
+---
+
+# Inference for mixture models
+
+It's possible to apply numerical methods (e.g. gradient descent) directly to the likelihood
+
+`$$\log p(\texttt{Data} | \mathbf{\mu}, \mathbf{\sigma}) = \sum_{n=1}^N \log \sum_{c=1}^C \pi_c p(y_n | \mu_c, \sigma_c)$$`
+
+--
+
+However, this is often not-advised as
+
+1. Requires constrained optimization on `\(\pi\)`, `\(\sigma\)`
+
+2. Highly multi-modal function, requires careful optimization tuning
+
+3. Doesn't allow for any closed-form solutions
+
+---
+
+# Expectation-maximization
+
+Begin by guessing `\(\mathbf{\mu}\)`, `\(\mathbf{\sigma}\)`, `\(\mathbf{\pi}\)`, then alternate
+
+1. Calculate weights `\(\gamma_{nc} = p(z_n=c|y_n, {\mathbf{\mu}}, {\mathbf{\sigma}})\)` 
+
+2. Maximize a version of the likelihood weighted by `\(\gamma_{nc}\)` w.r.t.  `\(\mathbf{\mu}\)`, `\(\mathbf{\sigma}\)`, `\(\mathbf{\pi}\)`
+
+Repeat until things stop changing (much!)
+
+--
+
+Can be seen as a "soft" version of k-means for cluster models
+
+--
+
+Note that
+
+* EM is an algorithm for _performing inference_
+
+* Applies to many models with sample-specific latent variables
+
+* The _clustering model_ here is still a Gaussian Mixture Model!
+
+---
+
+# Expectation-maximization (II)
+
+## Step 1: the E ("expectation") step
+
+Using our initial guesses of `\(\mathbf{\mu}\)`, `\(\mathbf{\sigma}\)`, `\(\mathbf{\pi}\)`, compute 
+`\(\gamma_{nc} = p(z_n=c|y_n, {\mathbf{\mu}}, {\mathbf{\sigma}})\)`
+
+remembering we can use Bayes' rule to compute this:
+
+`$$p(z_n=c | \texttt{Data}) = \frac{p(\texttt{Data} | z_n=c)p(z_n=c)}{\sum_{c'=1}^C p(\texttt{Data} | z_n=c')p(z_n=c')}$$`
+
+---
+
+# Expectation-maximization (III)
+
+## Step 2: the M ("maximization") step
+
+1. Introduce the "complete data" log likelihood (pretend we know `\(z\)`!)
+:
+
+  `$$\sum_{n=1}^N \sum_{c=1}^C \mathbb{1}_{z_n=c} \left( \log p(y_n | \mu_c, \sigma_c^2) + \log \pi_c \right)$$`
+  .footnote[
+  `\(\mathbb{1}_{z_n=c}\)` is 1 if `\(z_n=c\)` and 0 otherwise
+  
+  `\(\Gamma\)` is capital `\(\gamma\)` i.e. `\(\gamma_{nc}\)` for all `\(n\)`, `\(c\)`
+  ]
+
+--
+
+2. Take the expectation of this w.r.t. `\(p(z_n=c|y_n, {\mathbf{\mu}}, {\mathbf{\sigma}})\)`:
+
+  `$$Q(\mathbf{\mu}, \mathbf{\sigma}, \mathbf{\pi} | \Gamma, \mathbf{y}) = \sum_{n=1}^N \sum_{c=1}^C \gamma_{nc} \left( \log p(y_n | \mu_c, \sigma_c^2) + \log \pi_c \right)$$`
+
+--
+
+3. Maximize `\(Q(\mathbf{\mu}, \mathbf{\sigma}, \mathbf{\pi} | \Gamma, \mathbf{y})\)` w.r.t. `\(\mathbf{\mu}\)`, `\(\mathbf{\sigma}\)`, `\(\mathbf{\pi}\)`
+
+---
+
+# Expectation-maximization (IV)
+
+By alternating the E &amp; M steps, we're guaranteed to iteratively improve the marginal likelihood 
+
+`$$\log p(\texttt{Data} | \mathbf{\mu}, \mathbf{\sigma}) = \sum_{n=1}^N \log \sum_{c=1}^C \pi_c p(y_n | \mu_c, \sigma_c)$$`
+
+--
+
+We can keep track of this quantity every iteration and stop when it _levels off_
+
+## EM for a GMM
+
+For our model (Gaussian likelihood), there are closed form optimizers for each `\(\mathbf{\mu}\)`, `\(\mathbf{\sigma}\)`, `\(\mathbf{\pi}\)`
+
+* This makes inference very fast!
+
+See: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm#Examples
+
+---
+
+# An example using `mixtools`
+
+Remember our data
+
+
+```r
+qplot(y, fill = factor(z), bins=50)
+```
+
+&lt;img src="unsupervised_learning_discrete_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+
+
+```r
+library(mixtools)
+set.seed(123L)
+fit &lt;- normalmixEM(y, k=2)
+```
+
+```
+## number of iterations= 6
+```
+
+---
+
+# An example using `mixtools` (II)
+
+## Comparison to "true" values
+
+* `\(\mu_1 = -1\)`, `\(\mu_2 = 2\)`
+
+
+```r
+fit$mu
+```
+
+```
+## [1] -1.010552  1.990213
+```
+
+* `\(\sigma_1 = 0.5\)`, `\(\sigma_2 = 0.1\)`
+
+
+```r
+fit$sigma
+```
+
+```
+## [1] 0.50275322 0.09286676
+```
+
+* `\(p(z_n = 1) = \pi_1 = 1 - \pi_2 = 0.7\)`
+
+
+```r
+fit$lambda
+```
+
+```
+## [1] 0.688 0.312
+```
+
+
+
+---
+
+# Non-identifiability
+
+Can relabel the components of mixture models and get the same likelihood
+
+--
+
+In our example: 1 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; 2 and 2 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; 1
+
+--
+
+Requires care in analysis, e.g. imagine we're clustering bulk tumour gene expression
+
+* Cluster 1 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; _hypoxic_ cluster
+
+* Cluster 2 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; _proliferative_ cluster
+
+but you rerun the clustering and &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; 2 and 2 &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; 1
+
+--
+
+### Solutions
+
+1. Set the seed, make analysis reproducible
+
+2. Posthoc relabel the clusters (e.g. _hypoxic_ cluster has highest expression of hypoxia-related genes)
+
+---
+
+class: inverse, middle, center
+
+# Model selection
+
+_How do I choose `\(C\)`?_
+
+
+---
+
+# More ambiguous data
+
+
+```r
+mu &lt;- c(-1, 0, 1)
+sd &lt;- c(0.5, 0.2, 0.5)
+pi &lt;- c(0.4, 0.2, 0.4)
+N &lt;- 1000
+z &lt;- sample(1:3, N, replace=TRUE, prob=pi)
+y &lt;- sapply(z, function(i) rnorm(1, mu[i], sd[i]))
+```
+
+--
+
+.pull-left[
+
+```r
+qplot(y, bins=100)
+```
+
+![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+]
+
+--
+
+.pull-right[
+
+```r
+qplot(y, fill=factor(z), geom='density')
+```
+
+![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+
+]
+---
+
+# Ambiguous data (II)
+
+Fit 3 mixture models with `\(C=2,3,4\)`:
+
+
+```r
+fit2 &lt;- normalmixEM(y, k=2)
+fit3 &lt;- normalmixEM(y, k=3)
+fit4 &lt;- normalmixEM(y, k=4)
+```
+
+
+--
+
+Plot the resulting fits:
+
+
+
+.center[
+![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+]
+
+Which is correct?
+
+---
+
+# Strategies for picking `\(C\)`
+
+Setting the number of components is known as fixing the _model complexity_
+
+--
+
+One of the best strategies is to use _prior domain knowledge_ to fix `\(C\)`
+
+--
+
+Failing that, back to Bayes' rule:
+
+Can compute e.g.
+
+`$$p(C=2 | \texttt{Data}) = \frac{p(\texttt{Data} | C=2)p(C=2)}{\sum_{\kappa=?}^{??}p(\texttt{Data} | C=\kappa)p(C=\kappa)}$$`
+
+---
+
+# Model selection
+
+Computing `\(p(C=2 | \texttt{Data}) = \frac{p(\texttt{Data} | C=2)p(C=2)}{\sum_{\kappa=?}^{??}p(\texttt{Data} | C=\kappa)p(C=\kappa)}\)` is hard because 
+
+`$$p(\texttt{Data} | C=2) = \int \int \mathrm{d}\mu \mathrm{d}\sigma p(\mu, \sigma) p(\texttt{Data} | \mu, \sigma, C=2)$$`
+
+These integrals become very hard to compute in high dimensions
+
+--
+
+## Bayesian Information Criterion (BIC)
+
+`$$\texttt{BIC} = k \log N - 2 \log \hat{L}$$`
+
+* `\(k\)` is number of parameters in the model
+* `\(N\)` is the number of data points
+* `\(\hat{L}\)` is maximized value of likelihood function
+
+Then
+
+`$$p(\texttt{Model} | \texttt{Data}) \approx \exp(-\texttt{BIC}/2)p(\texttt{Model})$$`
+
+---
+
+# An impossibility theorem for clustering
+
+What would we like out of a good clustering algorithm (probabilistic or otherwise)?
+
+--
+
+1. _Scale invariance_: should be able to globally rescale the data and get the same clustering
+
+2. _Richness_: any clustering of the data is possible given the names/indices only
+
+3. _Consistency_: increasing inter-to-intra cluster variance should result in same clustering
+
+--
+
+[Kle03] show there is no possibly clustering function that satifies all 3
+
+
+---
+
+# References
+
+These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
+
+
+Kleinberg, J. (2003). "An impossibility theorem for clustering". In:
+_Advances in neural information processing systems_, pp. 463-470.
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
