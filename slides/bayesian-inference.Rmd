@@ -1,0 +1,326 @@
+---
+title: "Introduction to Bayesian Inference"
+subtitle: "Advanced Computational Biology II"
+author: "Kieran Campbell"
+institute: "Lunenfeld Tanenbaum Research Institute & University of Toronto"
+date: "2021-04-23 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, tamu-fonts]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+class: inverse
+
+```{r, include=FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(palmerpenguins)
+})
+
+library(RefManageR)
+BibOptions(check.entries = FALSE,
+           bib.style = "authoryear",
+           cite.style = "alphabetic",
+           style = "markdown",
+           hyperlink = FALSE,
+           dashed = FALSE)
+bib <- ReadBib("./acb.bib", check = FALSE)
+
+theme_set(cowplot::theme_cowplot())
+```
+
+
+
+# What we'll cover
+
+1. Re-introduction to Bayes rule
+2. Markov Chain Monte Carlo: Metropolis-Hastings
+3. Variational methods
+4. An introduction to Stan
+
+
+---
+
+# Conventions
+
+* We'll have $N$ samples indexed $n = 1, \ldots, N$
+
+--
+
+* When an output is multidimensional, we'll refer to output dimensions as $p=1,\ldots,P$
+
+--
+
+* Our data for sample $n$ is $y_{n}$ (possibly high dimensional)
+  
+--
+
+* Our parameter of interest is $\theta$ (possibly high dimensional)
+
+---
+
+# Linking science to statistics
+
+Many scientific questions fundamentally posed as
+
+$$p(\theta | y_1, \ldots, y_N)$$
+
+--
+
+## Examples
+
+* $y_1, \ldots, y_N$ expression measurements across replicates, $\theta$ "true" expression
+
+--
+
+* $y_1, \ldots, y_N$ ctDNA measurements across $N$ cases, $\theta$ "true" ctDNA measurement in case controls 
+
+--
+
+### May also want to compare case to control
+
+$\theta_1$ ctDNA abundance in cases, $\theta_2$ ctDNA abundance in controls
+
+$$p(\theta_1 > \theta_2 | y_1, \ldots, y_N)$$
+
+---
+
+# Rederiving Bayes rule
+
+So how do we get $p(\theta | y)$ ?
+
+--
+
+Remember for any R.V.s $A,B$
+
+$$p(A,B) = p(A|B)p(B) = p(B|A)p(A)$$
+--
+
+Substituting $B=\theta$ and $A=y$ and dividing we get **Bayes' rule**:
+
+$$p(\theta|y) = \frac{p(y|\theta)p(\theta)}{p(y)}$$
+
+--
+
+What is this strange $p(y)$?
+
+--
+
+Discrete $\theta$: $p(y) = \sum_{\text{All possible values of } \theta}p(y|\theta)p(\theta)$
+
+--
+
+Continuous $\theta$: $p(y) = \int_{\text{Space of } \theta} p(y|\theta)p(\theta) \mathrm{d} \theta$
+
+
+---
+
+# A concrete example (of Bayes' rule)
+
+Let $\theta = 1$ if a patient has diabetes, 0 otherwise
+
+--
+
+Let $y$ be the fasting blood sugar level of a patient in mg/dL
+
+--
+
+Let $p(y|\theta=1) = \mathcal{N}(y|135,10)$ and $p(y|\theta=0) = \mathcal{N}(y|80,15)$
+
+--
+
+Let $p(\theta=1) = 0.073$
+
+--
+
+A patient comes with $y=106$ mg/dL. What is the probability they have diabetes?
+
+--
+
+$$p(\theta=1|y) = \frac{p(y|\theta=1)p(\theta=1)}{p(y|\theta=1)p(\theta=1) + p(y|\theta=0)p(\theta=0)}$$
+
+--
+
+$$=\frac{\mathcal{N}(106|135,10) \times 0.073}{\mathcal{N}(106|135,10) \times 0.073 + \mathcal{N}(106|80,15) \times (1-0.073)}$$
+--
+
+```{r}
+a <- dnorm(106,135,10) * 0.073; b <- dnorm(106,80,15) * (1-0.073)
+
+print(a / (a+b))
+```
+
+---
+
+# Credible intervals
+
+Armed with the posterior, we can compute some cool quantities:
+
+> What's the posterior mean of $\theta$?
+
+$$\mathbb{E}_{p(\mathbf{\theta} | \mathbf{Y})} [ \mathbf{\theta} ] = \int \mathbf{\theta} p(\mathbf{\theta} | \mathbf{Y}) \mathrm{d} \theta$$
+> What's the probability $\theta$ falls in some region?
+
+$$p(\theta \in [a,b] | \mathbf{Y}) = \int_a^b p(\mathbf{\theta} | \mathbf{Y}) \mathrm{d} \theta$$
+--
+
+_This is what you've always wanted a confidence interval to be_
+
+.footnote[
+Note: everything is always conditioned on your model!
+]
+
+
+---
+
+# Bayesian inference 
+
+Easy, right?
+
+--
+
+Wrong...as soon as $\mathbf{\theta}$ becomes moderately high dimensional, Bayesian inference becomes _hard_. Why? 
+
+--
+
+$$p(\theta|y) = \frac{\color{darkgreen}{p(y|\theta)}\color{darkblue}{p(\theta)}}{\color{darkred}{\int_{\text{Space of } \theta} p(y|\theta)p(\theta) \mathrm{d} \theta}}$$
+$\color{darkgreen}{p(y|\theta)}$ `r icon::fontawesome("arrow-right")` easy to evaluate
+
+$\color{darkblue}{p(\theta)}$ `r icon::fontawesome("arrow-right")` easy to evaluate
+
+$\color{darkred}{\int_{\text{Space of } \theta} p(y|\theta)p(\theta) \mathrm{d} \theta}$ `r icon::fontawesome("arrow-right")` hard to evaluate
+
+
+---
+
+# The what of Bayesian inference
+
+Most of Bayesian inference comes down to smart ways to approximate $p(\theta|y)$ by only evaluating $\color{darkgreen}{p(y|\theta)}$ and $\color{darkblue}{p(\theta)}$
+
+--
+
+Two main approaches (we'll cover here):
+
+--
+
+1. _Sampling methods_ (e.g. MCMC): draw samples $\theta^s \sim p(\theta|y)$
+
+--
+
+2. _Variational methods_: come up with an easy-to-evaluate distribution $q(\theta)$ and make it as similar as possible to $p(\theta|y)$ while only evaluating $\color{darkgreen}{p(y|\theta)}$ and $\color{darkblue}{p(\theta)}$
+
+---
+
+# Gibbs sampling
+
+Suppose $\mathbf{\theta}$ is high-ish dimensional, i.e.
+
+$$\mathbf{\theta} = [\theta_1, \theta_2, \ldots, \theta_P  ]$$
+--
+
+Gibb's sampling (and many other appraoches) approximates the distribution $p(\mathbf{\theta} | \mathbf{Y})$
+
+by returning a set of samples
+
+$$\mathbf{\theta}^{(1)}, \mathbf{\theta}^{(2)}, \ldots, \mathbf{\theta}^{(S)}$$
+for $S$ samples
+
+--
+
+Remember here each $\mathbf{\theta}^{(s)}$ is $P$ dimensional
+
+--
+
+Using these samples we can take empirical expectations of interesting quantities, e.g.:
+
+> What's the posterior mean of $\mathbf{\theta}$?
+
+$$\mathbb{E}_{p(\mathbf{\theta} | \mathbf{Y})} [ \mathbf{\theta} ] = \int \mathbf{\theta} p(\mathbf{\theta} | \mathbf{Y}) \mathrm{d} \theta \approx \sum_{s=1}^S \mathbf{\theta}^{(s)}$$
+
+---
+
+# Gibbs sampling (II)
+
+So how does Gibbs sampling sample $\mathbf{\theta}^{(s)}$ from $p(\mathbf{\theta} | \mathbf{Y})$ ?
+
+--
+
+Remember $\mathbf{\theta}$ is $P$ dimensional
+
+--
+
+Relies on knowing the conditionals $p(\theta_p | \mathbf{\theta}_{-p}, \mathbf{Y})$ where $\mathbf{\theta}_{-p}$ is all elements of $\mathbf{\theta}$ other than $p$
+
+--
+
+Gibbs sampling proceeds via the following
+
+1. Initialize $\mathbf{\theta}$
+
+2. For each $p \in 1, \ldots, P$ sample $\theta_p \sim p(\theta_p | \mathbf{\theta}_{-p}, \mathbf{Y})$
+
+3. Repeat this whole process a number of times
+
+Then $\mathbf{\theta}^{(1)}, \mathbf{\theta}^{(2)}, \ldots, \mathbf{\theta}^{(S)}$ approximate $p(\mathbf{\theta} | \mathbf{Y})$
+
+--
+
+`r icon::fontawesome("check-circle")` efficient - no samples wasted
+
+`r icon::fontawesome("times-circle")` can get stuck in local optima
+
+---
+
+# Metropolis-Hastings MCMC
+
+Gibbs requires knowing  $p(\theta_p | \mathbf{\theta}_{-p}, \mathbf{Y})$
+
+Metropolis Hastings only requires $p(\mathbf{Y},\theta) = \color{darkgreen}{p(\mathbf{Y}|\theta)}\color{darkblue}{p(\theta)}$
+
+--
+
+## Transition kernel
+
+Need a way to hop around parameter space
+
+--
+
+Introduce $Q(\theta'|\theta)$ interpreted as
+
+> What's the probability I could move to $\theta'$ given I'm at $\theta$?
+
+Common choice $Q(\theta'|\theta) = \mathcal{N}(\theta, \lambda)$ for some $\lambda$
+
+i.e. a ball around $\theta$ with variance $\lambda$
+
+--
+
+---
+
+# MCMC visualized
+
+.center[
+<img src="bayesian-figs/mh.gif" width=90%>
+]
+
+
+.footnote[ Figure from
+https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/
+]
+
+
+
+---
+
+
+---
+
+
+
+
+---
