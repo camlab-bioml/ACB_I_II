@@ -4,6 +4,8 @@ subtitle: "Advanced Computational Biology II"
 author: "Kieran Campbell"
 institute: "Lunenfeld Tanenbaum Research Institute & University of Toronto"
 date: "2021-04-23 (updated: `r Sys.Date()`)"
+header-includes:
+   - \usepackage{ulem}
 output:
   xaringan::moon_reader:
     css: [default, metropolis, tamu-fonts]
@@ -223,7 +225,7 @@ Suppose $\mathbf{\theta}$ is high-ish dimensional, i.e.
 $$\mathbf{\theta} = [\theta_1, \theta_2, \ldots, \theta_P  ]$$
 --
 
-Gibb's sampling (and many other appraoches) approximates the distribution $p(\mathbf{\theta} | \mathbf{Y})$
+Gibbs sampling (and many other approaches) approximates the distribution $p(\mathbf{\theta} | \mathbf{Y})$
 
 by returning a set of samples
 
@@ -298,7 +300,52 @@ Common choice $Q(\theta'|\theta) = \mathcal{N}(\theta, \lambda)$ for some $\lamb
 
 i.e. a ball around $\theta$ with variance $\lambda$
 
+---
+
+# Metropolis-Hastings MCMC (II)
+
+Metropolis Hastings then works as follows:
+
+At $t=1$ initialize $\theta^{(t)}$ --
+
+Then repeatedly:
+
+1. Propose a new $\theta^{(t+1)} \sim Q(\cdot | \theta^{(t)})$ 
+
 --
+
+2. Compute the _acceptance ratio_ 
+
+  $$\alpha = \min(1, \frac{p( \theta^{(t+1)} | \mathbf{Y}) Q(\theta^{(t)} | \theta^{(t+1)}) }{p( \theta^{(t)} | \mathbf{Y}) Q(\theta^{(t+1)} | \theta^{(t)})})$$
+--
+
+3. Sample some $u \sim \text{Unif}(0,1)$
+
+--
+
+4. If $u < \alpha$ add $\theta^{(t+1)}$ to my set of samples of $\theta$, otherwise add $\theta^{(t)}$
+
+---
+
+# Metropolis-Hastings MCMC (III)
+
+$$\alpha = \min(1, \frac{p( \theta^{(t+1)} | \mathbf{Y}) Q(\theta^{(t)} | \theta^{(t+1)}) }{p( \theta^{(t)} | \mathbf{Y}) Q(\theta^{(t+1)} | \theta^{(t)})})$$
+
+> Hey! You told use we didn't need to know $p( \theta | \mathbf{Y})$! What's the point in this?
+
+--
+
+$$\alpha = \min(1, \frac{p( \mathbf{Y} | \theta^{(t+1)}) p(\theta^{(t+1)}) \color{darkred}{/ p(\mathbf{Y})} Q(\theta^{(t)} | \theta^{(t+1)}) }{p( \mathbf{Y} | \theta^{(t)}) p(\theta^{(t)}) \color{darkred}{/ p(\mathbf{Y})} Q(\theta^{(t+1)} | \theta^{(t)})})$$
+
+--
+
+As you collect more and more samples of $\theta$, they approximate $p( \theta | \mathbf{Y})$
+
+--
+
+* Often include some _burn in_
+
+* Often sample multiple chains (distinct initializations)
 
 ---
 
@@ -311,16 +358,128 @@ i.e. a ball around $\theta$ with variance $\lambda$
 
 .footnote[ Figure from
 https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/
+
+More reading: https://stephens999.github.io/fiveMinuteStats/MH_intro.html
 ]
 
 
+---
+
+# Variational Inference
+
+We know $p(\mathbf{\theta} | \mathbf{Y})$ is hard to evaluate
+
+Let's come up with some simpler distribution $q(\theta | \lambda)$<sup>1</sup> and adjust $\lambda$ to make
+
+.footnote[
+[1] _Not_ the same as the proposal distribution in MCMC
+]
+
+
+$$q(\theta | \lambda) \approx p(\mathbf{\theta} | \mathbf{Y})$$
+all without directly evaluating $p(\mathbf{\theta} | \mathbf{Y})$
+
+You:
+
+> Gasp! Magic!
+
 
 ---
 
+# Variational Inference (II)
+
+To make $q(\theta | \lambda) \approx p(\mathbf{\theta} | \mathbf{Y})$ we need some idea of a distance<sup>1</sup> between $q$ and $p$
+
+.footnote[
+[1] Not actually a distance
+]
+
+--
+
+Common choice is Kullback–Leibler divergence (KL-divergence), defined as
+
+$$\text{KL}(q||p) = \mathbb{E}_{q(\theta|\lambda)} [\log q(\theta|\lambda) - \log p(\theta | \mathbf{Y})]$$
+$\text{KL}(q||p)=0$ when $p$ and $q$ are the same distribution
+ 
+Idea is to adjust $\lambda$ to minimize $\text{KL}(q||p)$
+
+--
+
+> This still depends on $p(\theta | \mathbf{Y})$!!! What's the point?
 
 ---
 
+# Variational Inference (III)
 
+$$\begin{aligned}
+\text{KL}(q||p) & = \mathbb{E}_{q(\theta|\lambda)} [\log q(\theta|\lambda) - \log p(\theta | \mathbf{Y})] \\
+& = \mathbb{E}_{q(\theta|\lambda)} [\log q(\theta|\lambda) - \log p(\mathbf{Y} | \theta) - \log p(\theta) + \log p(\mathbf{Y})]
+\end{aligned}$$
+
+--
+
+$\mathbb{E}_{q(\theta|\lambda)} [ \log p(\mathbf{Y}) ]$ is a constant wrt $\lambda$
+
+so our original minization problem is the same as minizing 
+
+$$\mathbb{E}_{q(\theta|\lambda)} [\log q(\theta|\lambda) - \log p(\mathbf{Y} | \theta) - \log p(\theta)]$$
+We only need to evaluate $p(\mathbf{Y} | \theta)$ and $p(\theta)$!
+
+--
+
+## Mean field approximations
+
+Common choice is $q(\theta|\lambda) = \mathcal{N}(\theta | \mu_\lambda, \sigma_\lambda^2)$
+
+--
+
+If $\theta$ is $P$-dimensional, make a _mean field approximation_
+
+$$q(\theta | \lambda) = \prod_{p=1}^P q_p(\theta_p | \lambda_p)$$
+---
+
+# Variational Bayes: miscellaneous observations
+
+* Often much faster than MCMC across a range of problems
+
+--
+
+* No guarantee (unlike MCMC<sup>1</sup>) you end up with $p(\theta | \mathbf{Y})$
+
+.footnote[
+[1] Asymptotically
+]
+
+--
+
+* Much research into making $q$ more flexible
+
+--
+
+* If we have sample specific $z_n$, popular choice is $q(z_n | y_n) = \text{neural_network}(y_n)$
+
+--
+
+* `r Citet(bib, "blei2017variational")` is an excellent overview of the topic
+
+---
+
+# Probabilistic programming languages
 
 
 ---
+
+# Introduction to STAN
+
+---
+
+# References
+
+These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
+
+
+```{r refs, echo=FALSE, results="asis"}
+PrintBibliography(bib)
+```
+
+
