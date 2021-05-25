@@ -466,10 +466,200 @@ $$q(\theta | \lambda) = \prod_{p=1}^P q_p(\theta_p | \lambda_p)$$
 
 # Probabilistic programming languages
 
+## "Normal" programming languages
+
+```{python, eval=FALSE}
+x = capture_user_input()
+if x == "somevalue":
+  # do things
+```
+
+* Variables are deterministic*
+
+* Executing the program `r icon::fontawesome("arrow-right")` running instruction set
+
+--
+
+## Probabilistic programming languages
+
+* Variables are random
+
+* Executing the program `r icon::fontawesome("arrow-right")` probabilistic inference
+
+--
+
+PPLs essentially automate statistical inference 
+
 
 ---
 
 # Introduction to STAN
+
+Stan (https://mc-stan.org/) is a PPL for performing
+
+* MCMC
+
+* Variational Bayes
+
+* (Penalized) maximum likelihood estimation
+
+--
+
+## Practicalities
+
+* Compiled language, looks a bit like C++
+
+* Write your models in a `.stan` file
+
+* Interfaces to R and Python (and Matlab, and Julia, and...)
+
+---
+
+# Anatomy of a Stan program
+
+3 main "blocks" in a Stan file
+
+--
+
+## 1. Data
+
+All the _fixed_ variables (i.e. data) get declared here
+
+--
+
+## 2. Parameters
+
+All the variables you want to perform inference
+
+--
+
+## 3. Model
+
+How the data + parameters come together in a statistical model
+
+---
+
+# An example
+
+Suppose $y_n$ is tumour volume, $x_n$ is SNP status (0 or 1)
+
+--
+
+$$y_n \sim \text{LogNormal}(\beta_1 + \beta_2 x_n, \sigma)$$
+and we put some funky priors
+
+$$\beta_1, \beta_2 \sim \mathcal{N}(0,1)$$
+$$\sigma \sim \text{Gamma}(2, 0.1)$$
+--
+
+Real object of inference here is $\beta_1$ (effect of SNP on tumour volume)
+
+Ideally want to target $p(\beta_1 | \mathbf{x}, \mathbf{y})$ ignoring everything else!
+
+---
+
+# The model
+
+```{R, eval=FALSE}
+data {
+  int<lower = 1> N; // number of samples
+  real<lower = 0> y[N]; // tumour volume
+  int<lower=0,upper=1> x[N]; // SNP status
+}
+
+parameters {
+  real beta[2];
+  real<lower=0> sigma;
+}
+
+model {
+  beta ~ normal(0,1);
+  sigma ~ gamma(2, 0.1);
+  for(n in 1:N) y[n] ~ lognormal(beta[1] + beta[2] * x[n], sigma);
+}
+
+```
+
+
+---
+
+# Inference
+
+```{r, results='hide', echo=FALSE}
+N <- 50
+x <- sample(c(0,1), N, replace=TRUE)
+y <- rexp(N, 0.1 + 0.3 * x)
+
+code <- "data {
+  int<lower = 1> N; // number of samples
+  real<lower = 0> y[N]; // tumour volume
+  int<lower=0,upper=1> x[N]; // SNP status
+}
+
+parameters {
+  real beta[2];
+  real<lower=0> sigma;
+}
+
+model {
+  beta ~ normal(0,1);
+  sigma ~ gamma(2, 0.1);
+  for(n in 1:N) y[n] ~ lognormal(beta[1] + beta[2] * x[n], sigma);
+}"
+```
+
+
+```{r, message=FALSE, results='hide', warning=FALSE}
+library(rstan)
+data <- list(N=N, x=x, y=y)
+fit <- stan(model_code=code, data=data)
+```
+
+
+---
+
+# Output of Stan fit
+
+```{r, fig.width=6, fig.height=4}
+plot(fit)
+```
+
+
+---
+
+# Traceplots
+
+
+```{r, fig.width=10, fig.height=3}
+traceplot(fit)
+```
+
+
+---
+
+# Joint posterior
+
+```{r, fig.height=5, fig.width=5}
+pairs(fit, pars=c("beta", "sigma"))
+```
+
+
+---
+
+# Many other probabilistic programming languages
+
+1. PyMC3 - https://docs.pymc.io/
+
+2. Edward - http://edwardlib.org/
+
+3. Pyro - https://pyro.ai/
+
+4. NumPyro - http://num.pyro.ai/en/stable/
+
+.center[
+<img src="https://en.meming.world/images/en/c/cd/How_Do_You_Do%2C_Fellow_Kids%3F.jpg" width=60%>
+]
+
 
 ---
 
