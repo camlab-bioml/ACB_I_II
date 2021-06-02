@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Introduction to Deep Learning</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Kieran Campbell" />
+    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Introduction to Deep Learning
+## Advanced Computational Biology II
+### Kieran Campbell
+### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
+### 2021-05-28 (updated: 2021-06-02)
+
+---
+
+
+class: inverse
+
+
+
+
+
+# What we'll cover
+
+
+1. Feed forward neural networks
+2. Training neural nets: backpropagation
+3. Convolutional neural networks
+4. Recurrent neural networks
+5. Autoencoders revisited
+
+
+---
+
+# Image classification
+
+![imagenet-benchmarks](deep-learning-figs/chart.png)
+
+.footnote[
+ https://paperswithcode.com/sota/image-classification-on-imagenet
+]
+
+---
+
+# The perceptron
+
+The perceptron [Ros58] early example of "biologically inspired" learning
+
+Predict a binary output given input `\(x\)` via
+
+$$
+f(\mathbf{x})=\left \\{
+`\begin{aligned}
+1 &amp; \text{ if } \mathbf{w}\cdot \mathbf{x}+b &gt; 0, \\
+0 &amp; \text{ otherwise}
+\end{aligned}`
+\right.
+$$
+
+* `\(f(x)\)` classifies sample as 0 or 1 depending on `\(x\)` 
+
+* Iteratively adjust `\(w\)`, `\(b\)` to get `\(f(x)\)` to match ground truth on a training dataset
+
+---
+
+# Linear decision boundary
+
+.center[
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Perceptron_example.svg/1024px-Perceptron_example.svg.png" width=50%&gt;
+]
+
+.footnote[
+Elizabeth Goodspeed, CC BY-SA 4.0 , via Wikimedia Commons
+]
+
+---
+
+# Multi-layer perceptrons
+
+Previously:
+
+--
+
+$$
+f(\mathbf{x})=\left \\{
+`\begin{aligned}
+1 &amp; \text{ if } \mathbf{w}\cdot \mathbf{x}+b &gt; 0, \\
+0 &amp; \text{ otherwise}
+\end{aligned}`
+\right.
+$$
+--
+
+Rather than compare `\(f(x)\)` to our ground-truth, use it as input to a second function:
+
+$$
+g(\mathbf{x})=\left \\{
+`\begin{aligned}
+1 &amp; \text{ if } v f(\mathbf{x}) + c &gt; 0, \\
+0 &amp; \text{ otherwise}
+\end{aligned}`
+\right.
+$$
+* Typically use multiple `\(f\)`s as input
+
+* Now want to adjust `\(\mathbf{w}\)`, `\(\mathbf{b}\)`, `\(v\)`, `\(c\)` to make `\(g(x)\)` as close to output as possible
+
+--
+
+Remember (from ACB-I) want to minimize `\(\mathrm{LOSS}(\mathbf{y}, g(\mathbf{x}))\)`
+
+
+---
+
+# Activation functions
+
+In the perceptron the output of each layer is set to 0 or 1:
+
+$$
+f(\mathbf{x})=\left \\{
+`\begin{aligned}
+1 &amp; \text{ if } \mathbf{w}\cdot \mathbf{x}+b &gt; 0, \\
+0 &amp; \text{ otherwise}
+\end{aligned}`
+\right.
+$$
+Many possible _activation functions_ with appealing properties:
+
+.center[
+&lt;img src="deep-learning-figs/activation-functions.png" width=85%&gt;
+]
+
+.footnote[
+ https://en.wikipedia.org/wiki/Activation_function
+]
+
+---
+
+# DNNs visualized
+
+.center[
+&lt;img src="deep-learning-figs/dnn.png" width=85%&gt;
+]
+
+Figure: [KG19]
+
+---
+
+background-image: url('intro-ml_figs/mountain.jpg')
+background-position: center
+background-size: contain
+class: inverse
+
+
+# Gradient descent
+
+
+You're at the top of a mountain, it's getting dark, and you need to get down
+--
+ 
+* Your position `\((x,y)\)` is your parameter space `\((w,b)\)` to explore
+
+--
+ 
+* Your height is your loss you want to minimize
+
+--
+
+## Q: What's the strategy?
+
+--
+
+Take successive little steps downhill until things flatten out
+
+--
+
+## Local optimality
+
+Note this doesn't guarantee you to get to the _bottom_, only to a much flatter region
+
+ &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; Big problem depending on shape of your mountain / loss function
+
+---
+
+# What is downhill?
+
+&gt; successive little steps downhill
+
+--
+
+.pull-left[
+Consider `\(y=(x-1)^2\)`, `\(\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)\)`
+]
+
+.pull-right[
+&lt;img src="deep-learning_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" /&gt;
+]
+
+--
+
+Notice:
+* When `\(x &gt; 1\)` we want to go to the _left_ and `\(\frac{\mathrm{d}y}{\mathrm{d}x} &gt; 0\)`
+* When `\(x &lt; 1\)` we want to go to the _right_ and  `\(\frac{\mathrm{d}y}{\mathrm{d}x} &lt; 0\)`
+
+The sign of the gradient always points uphill!
+
+---
+
+# Gradient descent
+
+This suggests an iterative scheme:
+
+1. Initialize some values for `\((w,b)\)`
+
+--
+
+2. For a given number of steps:
+ * Update `\(w \leftarrow w - \epsilon \frac{\partial}{\partial w} \mathrm{LOSS(f(\mathbf{x}), \mathbf{y}; w, b)}\)`
+ * Update `\(b \leftarrow b - \epsilon \frac{\partial}{\partial b} \mathrm{LOSS(f(\mathbf{x}), \mathbf{y}; w, b)}\)`
+
+--
+
+3. Monitor `\(\mathrm{LOSS(f(\mathbf{x}), \mathbf{y}; w, b)}\)` - if it "levels off" we can end with the optimal values `\((w,b)\)`
+
+--
+
+## Learning rate
+
+`\(\epsilon&gt;0\)` is known as the _learning rate_ or _step size_. 
+
+* Important parameter to tune: too large and you overshoot, too small and it's inefficient
+
+---
+
+# Backpropagation in one slide
+
+To use gradient descent to train our neural network we need to compute
+
+`$$\frac{\partial}{\partial \theta_i} \mathrm{LOSS}(f(\mathbf{x}), \mathbf{y}; \mathbf{\theta})$$`
+where `\(\mathbf{\theta}\)` are all the parameters of the neural network
+
+--
+
+.pull-left[
+
+_Backpropagation_ is an efficient way of computing these derivatives using the chain rule and storing intermediate values
+
+Recall chain rule: if `\(y = g(f(x))\)` then `\(\frac{dy}{dx} = \frac{d g}{d f}\frac{df}{dx}\)`
+
+Deep NNs often composition of functions, e.g.
+
+`$$\text{LOSS}(\text{activation}(\text{linear}(\textbf{x})))$$`
+]
+
+.pull-right[
+![test](https://colah.github.io/posts/2015-08-Backprop/img/tree-backprop.png)
+.footnote[
+https://colah.github.io/posts/2015-08-Backprop/
+]
+]
+
+
+---
+
+# Deep neural networks for imaging data
+
+Images are large!
+
+CIFAR-10 dataset has "small" images (32x32x3) &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; 32x32x3 = 3072 weights for each neuron in input layer
+
+--
+
+A biologically-inspired solution to this is **convolutional neural networks** (CNNs)
+
+--
+
+1. **Convolutional layer**
+
+  Scans a set of learnable filters across the image
+
+--
+  
+2. **Pooling layer**
+
+  Spatially downsamples / pools output
+
+--
+
+3. **Fully connected layer**
+
+  Computes output probabilities (similar to feed forward network)
+
+
+
+---
+
+# Convolutional layer
+
+.pull-left[
+.center[
+&lt;img src="deep-learning-figs/convolution.gif" width=100%&gt;
+]
+]
+
+.pull-right[
+  
+  ### Key hyperparameters:
+  
+  * Width, height
+  
+  * Stride (how big a step do you take?)
+  
+  * How many features?
+  
+]
+
+.footnote[
+&lt;sup&gt;https://www.coursera.org/learn/convolutional-neural-networks/home/&lt;/sup&gt;
+]
+
+---
+
+# (Max) pooling layer
+
+
+.center[
+  &lt;img src="deep-learning-figs/maxpooling.png" width=70%&gt;
+  ]
+  
+* Reduces dimensionality via local aggregation
+
+* Multiple variations depending on aggregation operation (max, mean)
+
+.footnote[
+&lt;sup&gt;https://en.wikipedia.org/wiki/File:Max_pooling.png&lt;/sup&gt;
+]
+
+---
+
+# What do CNNs learn?
+
+.center[
+  &lt;img src="deep-learning-figs/Yosinski.png" width=60%&gt;
+  ]
+
+.footnote[
+  [Yos+15]
+]
+
+---
+
+# Image augmentation
+
+The meaning of images are subject to a set of _invariances_
+
+**Example**: A photo of a chair upside-down is still a chair
+
+--
+
+One strategy is to feed augmented training data in to reflect these invariances (rotations, translations, altered colouring, skew,...)
+
+--
+
+.center[
+&lt;img src="deep-learning-figs/3x/mooseML@3x.png" width=80%&gt;
+]
+
+
+---
+
+# Deep neural networks for temporal data
+
+Often data is has inherent ordering, e.g.:
+
+* Time series data 
+
+* Textual data
+
+Can represent this via `\(y_t\)` for `\(t=1,\ldots,T\)`
+
+--
+
+Typical task is to predict future values given past
+
+--
+
+.center[
+&lt;img src="deep-learning-figs/sepsis.png" width=70%&gt;
+]
+
+.footnote[
+&lt;sup&gt;[Fle+20]&lt;/sup&gt;
+]
+--
+
+### Why might a standard (feed forward) net not work so well here?
+
+
+---
+
+# Recurrent neural networks
+
+Time dependent input-output pairs `\((x_t, y_t)\)` for `\(t=1,\ldots,T\)`, e.g.:
+
+* `\(x\)` = english words, `\(y\)` = french words  &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; translation
+
+* `\(x\)` = image, `\(y\)` = caption  &lt;svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" style="height:1em;fill:currentColor;position:relative;display:inline-block;top:.1em;"&gt;  [ comment ]  &lt;path d="M190.5 66.9l22.2-22.2c9.4-9.4 24.6-9.4 33.9 0L441 239c9.4 9.4 9.4 24.6 0 33.9L246.6 467.3c-9.4 9.4-24.6 9.4-33.9 0l-22.2-22.2c-9.5-9.5-9.3-25 .4-34.3L311.4 296H24c-13.3 0-24-10.7-24-24v-32c0-13.3 10.7-24 24-24h287.4L190.9 101.2c-9.8-9.3-10-24.8-.4-34.3z"&gt;&lt;/path&gt;&lt;/svg&gt; image captioning
+
+--
+
+
+RNNs compute a hidden state `\(h_t\)` that's a function of `\(x_t\)` and `\(h_{t-1}\)`
+
+`\(h_t = g_1(x_t, h_{t-1})\)`
+
+`\(y_t = g_2(h_t)\)`
+
+.center[
+&lt;img src="deep-learning-figs/rnn.png" width=70%&gt;
+]
+
+.footnote[
+&lt;sub&gt;Figure: [Sch19]&lt;/sub&gt;
+]
+
+---
+
+class: middle, inverse
+
+### Example: predict next character in sequence
+
+.center[
+&lt;img src="http://karpathy.github.io/assets/rnn/charseq.jpeg" width=60%&gt;
+]
+
+.foonote[
+Figure: http://karpathy.github.io/2015/05/21/rnn-effectiveness/
+]
+
+---
+
+class: middle, inverse
+
+
+.center[
+&lt;img src="http://karpathy.github.io/assets/rnn/diags.jpeg" width=100%&gt;
+]
+
+.foonote[
+Figure: http://karpathy.github.io/2015/05/21/rnn-effectiveness/
+]
+
+---
+
+# More recent developments in sequence modelling
+
+## Long short term memory networks (LSTMs, [HS97]) 
+
+* Allow for long range dependencies
+
+* Fantastic blog post: https://colah.github.io/posts/2015-08-Understanding-LSTMs/
+
+## Transformer models
+
+* Use _attention_, a form of adaptive input weighting
+
+* Modern examples applied to language include GPT, BERT
+
+---
+
+# Deep learning in genomics
+
+Many applications including
+
+1. Predicting sequence specificity of DNA binding proteins
+
+2. Predict methylation based on genome topology, DNA sequence
+
+3. Predict expression from sequence
+
+Good intro reading: [Zou+19]
+
+--
+
+## In practice...
+
+Deep neural networks are **universal function approximators**
+
+Consequently, they are **data hungry**
+
+Think `\(&gt;1000\)` samples before reaching for a DNN
+
+---
+
+# References
+
+These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
+
+&lt;small&gt;
+Fleuren, L. M., T. L. Klausch, C. L. Zwager, et al. (2020). "Machine
+learning for the prediction of sepsis: a systematic review and
+meta-analysis of diagnostic test accuracy". In: _Intensive care
+medicine_ 46.3, pp. 383-400.
+
+Hochreiter, S. and J. Schmidhuber (1997). "Long short-term memory". In:
+_Neural computation_ 9.8, pp. 1735-1780.
+
+Kriegeskorte, N. and T. Golan (2019). "Neural network models and deep
+learning". In: _Current Biology_ 29.7, pp. R231-R236.
+
+Rosenblatt, F. (1958). "The perceptron: a probabilistic model for
+information storage and organization in the brain." In: _Psychological
+review_ 65.6, p. 386.
+
+Schmidt, R. M. (2019). "Recurrent neural networks (rnns): A gentle
+introduction and overview". In: _arXiv preprint arXiv:1912.05911_.
+
+Yosinski, J., J. Clune, A. Nguyen, et al. (2015). "Understanding neural
+networks through deep visualization". In: _arXiv preprint
+arXiv:1506.06579_.
+
+Zou, J., M. Huss, A. Abid, et al. (2019). "A primer on deep learning in
+genomics". In: _Nature genetics_ 51.1, pp. 12-18.
+&lt;/small&gt;
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
