@@ -4,7 +4,7 @@
     <title>Unsupervised learning: continuous latent variable models</title>
     <meta charset="utf-8" />
     <meta name="author" content="Kieran Campbell" />
-    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
@@ -14,10 +14,10 @@
 class: center, middle, inverse, title-slide
 
 # Unsupervised learning: continuous latent variable models
-## Advanced Computational Biology II
+## Foundational Computational Biology II
 ### Kieran Campbell
 ### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
-### 2021-02-22 (updated: 2021-05-11)
+### 2021-02-22 (updated: 2022-04-04)
 
 ---
 
@@ -294,7 +294,7 @@ Where `\(S\)` is the `\(P \times P\)` empirical covariance
 |Adelie  |           36.7|          19.3|               193|        3450|
 --
 
-&lt;img src="unsupervised_learning_continuous_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-unsupervised_learning_continuous_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" /&gt;
 
 
 ---
@@ -395,7 +395,7 @@ ggplot(df, aes(x = PC1, y = PC2, colour = species)) +
   geom_point()
 ```
 
-&lt;img src="unsupervised_learning_continuous_files/figure-html/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-unsupervised_learning_continuous_files/figure-html/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /&gt;
 
 
 ---
@@ -557,7 +557,7 @@ Each mutational signature is defined by contributions from each mutation type
 ]
 
 .footnote[
-Figure: Alexandrov, Kim, Haradhvala, et al. [Ale+20]
+Figure: Alexandrov, Kim, Haradhvala, Huang, Ng, Wu, Boot, Covington, Gordenin, Bergstrom, and others [Ale+20]
 ]
 
 Often associated with known mutational processes, e.g. double strand break repair, UV light exposure, etc.
@@ -699,26 +699,30 @@ Becoming very popular in single-cell RNA-sequencing, see e.g. [Lop+18]
 These slides: [camlab.ca/teaching](https://www.camlab.ca/teaching)
 
 
-Alexandrov, L. B., J. Kim, N. J. Haradhvala, et al. (2020). "The repertoire of
-mutational signatures in human cancer". In: _Nature_ 578.7793, pp. 94-101.
+Alexandrov, L. B., J. Kim, N. J. Haradhvala, et al. (2020). "The
+repertoire of mutational signatures in human cancer". In: _Nature_
+578.7793, pp. 94-101.
 
-Bishop, C. M. (2006). _Pattern recognition and machine learning_. springer.
+Bishop, C. M. (2006). _Pattern recognition and machine learning_.
+springer.
 
-Consortium, T. M. and others (2018). "Single-cell transcriptomics of 20 mouse
-organs creates a Tabula Muris". In: _Nature_ 562.7727, pp. 367-372.
+Consortium, T. M. and others (2018). "Single-cell transcriptomics of 20
+mouse organs creates a Tabula Muris". In: _Nature_ 562.7727, pp.
+367-372.
 
-Lopez, R., J. Regier, M. B. Cole, et al. (2018). "Deep generative modeling for
-single-cell transcriptomics". In: _Nature methods_ 15.12, pp. 1053-1058.
+Lopez, R., J. Regier, M. B. Cole, et al. (2018). "Deep generative
+modeling for single-cell transcriptomics". In: _Nature methods_ 15.12,
+pp. 1053-1058.
 
-Paatero, P. and U. Tapper (1994). "Positive matrix factorization: A non-negative
-factor model with optimal utilization of error estimates of data values". In:
-_Environmetrics_ 5.2, pp. 111-126.
+Paatero, P. and U. Tapper (1994). "Positive matrix factorization: A
+non-negative factor model with optimal utilization of error estimates
+of data values". In: _Environmetrics_ 5.2, pp. 111-126.
 
-Spearman, C. (1904). "" General Intelligence" Objectively Determined and
-Measured."
+Spearman, C. (1904). "" General Intelligence" Objectively Determined
+and Measured."
 
-Van der Maaten, L. and G. Hinton (2008). "Visualizing data using t-SNE." In:
-_Journal of machine learning research_ 9.11.
+Van der Maaten, L. and G. Hinton (2008). "Visualizing data using
+t-SNE." In: _Journal of machine learning research_ 9.11.
 
 
     </textarea>

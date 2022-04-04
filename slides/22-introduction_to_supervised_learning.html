@@ -4,7 +4,7 @@
     <title>An introduction to supervised machine learning</title>
     <meta charset="utf-8" />
     <meta name="author" content="Kieran Campbell" />
-    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
@@ -14,10 +14,10 @@
 class: center, middle, inverse, title-slide
 
 # An introduction to supervised machine learning
-## Advanced Computational Biology I
+## Foundational Computational Biology I
 ### Kieran Campbell
 ### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
-### 2021-02-22 (updated: 2021-04-07)
+### 2021-02-22 (updated: 2022-04-04)
 
 ---
 
@@ -193,7 +193,7 @@ _is my output continuous or discrete?_
  * Random forests
  * Deep neural networks
  
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
 ]
 
 --
@@ -210,7 +210,7 @@ _is my output continuous or discrete?_
  * Support vector machines
  * Deep neural networks
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -444,7 +444,7 @@ Would like to minimize `\(l(w,b)\)` wrt `\(w,b\)`
 # Logistic regression example
 
 .pull-left[
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -466,7 +466,7 @@ ggplot(df, aes(x = x, y = y)) +
             colour='darkred', size=1.5)
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
 
 
 ]
@@ -551,7 +551,7 @@ y &lt;- x * log(x) +
 qplot(x,y)
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
 ]
 
 
@@ -573,7 +573,7 @@ ggplot(df, aes(x=x)) +
   geom_line(aes(y=t), colour='red')
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -594,7 +594,7 @@ ggplot(df, aes(x=x)) +
   geom_line(aes(y=t), colour='red')
 ```
 
-![](introduction_to_supervised_learning_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+![](22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
 ]
 
 ---
@@ -661,7 +661,7 @@ qplot(1:20, mse) +
   labs(x = "Degree of polynomial", y = "Mean squared error (test)")
 ```
 
-&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
 
 
 
@@ -869,7 +869,7 @@ Consider `\(y=(x-1)^2\)`, `\(\frac{\mathrm{d}y}{\mathrm{d}x} = 2(x-1)\)`
 ]
 
 .pull-right[
-&lt;img src="introduction_to_supervised_learning_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-introduction_to_supervised_learning_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
 ]
 
 --

@@ -4,7 +4,7 @@
     <title>Unsupervised learning: mixture models</title>
     <meta charset="utf-8" />
     <meta name="author" content="Kieran Campbell" />
-    <script src="libs/header-attrs-2.5/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/tamu-fonts.css" rel="stylesheet" />
@@ -14,10 +14,10 @@
 class: center, middle, inverse, title-slide
 
 # Unsupervised learning: mixture models
-## Advanced Computational Biology II
+## Foundational Computational Biology II
 ### Kieran Campbell
 ### Lunenfeld Tanenbaum Research Institute &amp; University of Toronto
-### 2021-02-22 (updated: 2021-05-11)
+### 2021-02-22 (updated: 2022-04-04)
 
 ---
 
@@ -201,7 +201,7 @@ print(head(z))
 ```
 
 ```
-## [1] 1 2 1 1 2 2
+## [1] 1 1 2 2 2 2
 ```
 
 ---
@@ -225,7 +225,7 @@ for(n in 1:N) {
 qplot(y, fill = factor(z), bins=50)
 ```
 
-&lt;img src="unsupervised_learning_discrete_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-unsupervised_learning_discrete_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
 
 
 ---
@@ -365,7 +365,7 @@ Remember our data
 qplot(y, fill = factor(z), bins=50)
 ```
 
-&lt;img src="unsupervised_learning_discrete_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="22-unsupervised_learning_discrete_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
 
 
 ```r
@@ -392,7 +392,7 @@ fit$mu
 ```
 
 ```
-## [1] -1.010552  1.990213
+## [1] -0.9647411  1.9973481
 ```
 
 * `\(\sigma_1 = 0.5\)`, `\(\sigma_2 = 0.1\)`
@@ -403,7 +403,7 @@ fit$sigma
 ```
 
 ```
-## [1] 0.50275322 0.09286676
+## [1] 0.4891417 0.1000087
 ```
 
 * `\(p(z_n = 1) = \pi_1 = 1 - \pi_2 = 0.7\)`
@@ -414,7 +414,7 @@ fit$lambda
 ```
 
 ```
-## [1] 0.688 0.312
+## [1] 0.728 0.272
 ```
 
 
@@ -478,7 +478,7 @@ y &lt;- sapply(z, function(i) rnorm(1, mu[i], sd[i]))
 qplot(y, bins=100)
 ```
 
-![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+![](22-unsupervised_learning_discrete_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
 
 ]
 
@@ -490,7 +490,7 @@ qplot(y, bins=100)
 qplot(y, fill=factor(z), geom='density')
 ```
 
-![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+![](22-unsupervised_learning_discrete_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
 
 ]
 ---
@@ -514,7 +514,7 @@ Plot the resulting fits:
 
 
 .center[
-![](unsupervised_learning_discrete_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+![](22-unsupervised_learning_discrete_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
 ]
 
 Which is correct?
